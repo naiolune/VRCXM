@@ -1,0 +1,291 @@
+@charset "utf-8";
+
+//
+// Copyright(c) 2019-2025 pypy and individual contributors.
+// All rights reserved.
+//
+// This work is licensed under the terms of the MIT license.
+// For a copy, see <https://opensource.org/licenses/MIT>.
+//
+
+// Theme Variables - Light theme (default)
+// Light theme backgrounds
+$--theme-bg-base: #ffffff;
+$--theme-bg-base-2: #f5f5f5;
+$--theme-bg-base-3: #fafafa;
+$--theme-bg-1: #ffffff; // Main app background
+$--theme-bg-2: #f5f5f5; // Sidebar/Menu background
+$--theme-bg-3: #ffffff; // Main content area background
+$--theme-bg-4: #f0f0f0; // Card/Dialog background
+$--theme-bg-5: #e8e8e8; // Hover/Active states
+
+// Light theme borders
+$--theme-border-1: #e0e0e0;
+$--theme-border-2: #d0d0d0;
+$--theme-border-3: #c0c0c0;
+
+// Light theme text colors
+$--theme-text-1: #333333; // Primary text
+$--theme-text-2: #666666; // Secondary text
+$--theme-text-3: #999999; // Tertiary text
+$--theme-text-4: #b3b3b3; // Placeholder text
+
+// Light theme accent colors
+$--theme-primary: #409eff;
+$--theme-success: #67c23a;
+$--theme-warning: #e6a23c;
+$--theme-danger: #f56c6c;
+$--theme-info: #909399;
+
+// Shadow system for depth
+$--shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+$--shadow-md: 0 4px 16px rgba(0, 0, 0, 0.15);
+$--shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.2);
+$--shadow-xl: 0 12px 32px rgba(0, 0, 0, 0.25);
+
+// Border radius
+$--radius-sm: 8px;
+$--radius-md: 12px;
+$--radius-lg: 16px;
+$--radius-xl: 20px;
+
+// Element Plus theme variables
+$--border-color-lighter: $--theme-border-1;
+$--border-color-extra-light: #f0f0f0;
+$--background-color-base: $--theme-bg-3;
+$--input-focus-border: #409eff;
+$--table-header-background-color: $--theme-bg-2;
+$--table-row-hover-background-color: $--theme-bg-4;
+$--skeleton-to-color: $--theme-bg-4;
+$--tree-node-hover-background-color: $--theme-bg-3;
+$--collapse-content-font-color: $--theme-text-2;
+$--message-close-icon-color: $--theme-text-3;
+$--dropdown-menu-box-shadow: $--shadow-md;
+$--box-shadow-base: $--shadow-sm;
+$--box-shadow-dark: $--shadow-lg;
+$--calendar-selected-background-color: rgba(64, 158, 255, 0.1);
+
+@forward 'element-plus/theme-chalk/src/common/var.scss' with (
+    $colors: (
+        'white': $--theme-text-1,
+        'black': $--theme-bg-base,
+            'primary': (
+                'base': $--theme-primary
+            ),
+        'success': (
+            'base': $--theme-success
+        ),
+        'warning': (
+            'base': $--theme-warning
+        ),
+        'danger': (
+            'base': $--theme-danger
+        ),
+        'error': (
+            'base': $--theme-danger
+        ),
+        'info': (
+            'base': $--theme-info
+        )
+    ),
+    $text-color: (
+        'primary': $--theme-text-1,
+        'regular': $--theme-text-2,
+        'secondary': $--theme-info,
+        'placeholder': $--theme-text-4,
+        'disabled': $--theme-text-4
+    ),
+    $border-color: (
+        '': $--theme-border-1,
+        'light': $--theme-border-2,
+        'lighter': $--border-color-lighter,
+        'extra-light': $--border-color-extra-light,
+        'dark': $--theme-border-1,
+        'darker': $--theme-border-2
+    ),
+    $fill-color: (
+        '': $--background-color-base,
+        'light': $--theme-bg-4,
+        'lighter': $--theme-bg-5,
+        'extra-light': $--border-color-extra-light,
+        'dark': $--theme-bg-2,
+        'darker': $--theme-bg-1,
+        'blank': $--theme-bg-4
+    ),
+    $bg-color: (
+        '': $--theme-bg-2,
+        'page': $--theme-bg-1,
+        'overlay': $--theme-bg-4
+    ),
+    $box-shadow: (
+        '': $--shadow-md,
+        'light': $--shadow-sm,
+        'lighter': $--shadow-sm,
+        'dark': $--shadow-lg
+    ),
+    $disabled: (
+        'bg-color': $--theme-bg-3,
+        'text-color': $--theme-text-4,
+        'border-color': $--theme-border-1
+    )
+);
+
+$--color-primary: $--theme-primary;
+$--color-success: $--theme-success;
+$--color-warning: $--theme-warning;
+$--color-danger: $--theme-danger;
+$--color-info: $--theme-info;
+
+$--color-white: $--theme-text-1;
+$--color-black: $--theme-bg-base;
+
+$--color-text-primary: $--theme-text-1;
+$--color-text-regular: $--theme-text-2;
+$--color-text-secondary: $--theme-info;
+$--color-text-placeholder: $--theme-text-4;
+
+$--border-color-base: $--theme-border-1;
+$--border-color-light: $--theme-border-2;
+
+$--button-default-background-color: $--theme-bg-4;
+$--button-default-border-color: $--theme-border-1;
+$--button-default-font-color: $--theme-text-2;
+
+$--input-background-color: $--theme-bg-3;
+$--input-border-color: $--theme-border-1;
+$--input-font-color: $--theme-text-1;
+
+$--select-input-focus-border-color: $--input-focus-border;
+
+$--dialog-background-color: $--theme-bg-3;
+$--popover-background-color: $--theme-bg-3;
+
+$--table-border-color: $--theme-border-1;
+
+$--pagination-font-color: $--theme-text-2;
+$--pagination-background-color: $--theme-bg-3;
+
+$--tooltip-fill: $--theme-bg-4;
+$--tooltip-color: $--theme-text-1;
+$--tooltip-border-color: $--theme-border-1;
+
+$--backtop-background-color: $--theme-bg-4;
+$--backtop-font-color: $--theme-text-2;
+$--backtop-hover-background-color: $--theme-bg-5;
+
+$--datepicker-font-color: $--theme-text-1;
+$--datepicker-header-font-color: $--theme-text-1;
+$--datepicker-icon-color: $--theme-text-1;
+
+$--skeleton-color: $--theme-bg-4;
+
+$--select-dropdown-background: $--theme-bg-3;
+$--select-dropdown-border: 1px solid $--theme-border-1;
+
+$--tree-font-color: $--theme-text-2;
+
+$--menu-item-font-color: $--theme-text-2;
+$--menu-background-color: $--theme-bg-2;
+
+$--collapse-header-background-color: $--theme-bg-4;
+$--collapse-content-background-color: $--theme-bg-3;
+$--collapse-border-color: $--theme-border-1;
+$--collapse-header-font-color: $--theme-text-2;
+
+$--message-background-color: $--theme-bg-4;
+$--message-close-hover-color: $--theme-text-2;
+$--message-success-font-color: $--theme-success;
+$--message-info-font-color: $--theme-text-1;
+$--message-warning-font-color: $--theme-warning;
+$--message-danger-font-color: $--theme-danger;
+
+$--pagination-hover-color: $--theme-text-1;
+
+$--card-background-color: $--theme-bg-3;
+
+:root {
+    --group-calendar-event-bg: #{$--calendar-selected-background-color};
+    --group-calendar-badge-following: #{$--color-success};
+    --group-calendar-badge-normal: #{$--theme-primary};
+    --radius-sm: #{$--radius-sm};
+    --radius-md: #{$--radius-md};
+    --radius-lg: #{$--radius-lg};
+    --radius-xl: #{$--radius-xl};
+}
+
+
+@import '_theme.dark_styles';
+
+// Light theme components
+html:not(.dark) {
+    .el-calendar {
+        background-color: $--theme-bg-3 !important;
+        border: 1px solid $--theme-border-1 !important;
+        border-radius: $--radius-lg !important;
+    }
+
+    .el-calendar__title {
+        color: $--theme-text-1 !important;
+    }
+
+    .el-card {
+        background: $--theme-bg-3 !important;
+        border: 1px solid $--theme-border-1 !important;
+        border-radius: 16px !important;
+        box-shadow: $--shadow-md !important;
+    }
+
+    .el-descriptions__body {
+        background-color: $--theme-bg-3 !important;
+        color: $--theme-text-1 !important;
+    }
+
+    .el-timeline-item__tail {
+        border-left-color: $--theme-border-1 !important;
+    }
+
+    .el-timeline-item__node {
+        background-color: $--theme-border-2 !important;
+    }
+
+    .el-popper[data-popper-placement^='top'] .el-popper__arrow {
+        border-top-color: $--theme-bg-3 !important;
+    }
+
+    .el-popper[data-popper-placement^='top'] .el-popper__arrow::after {
+        border-top-color: $--theme-bg-3 !important;
+    }
+
+    .el-popper[data-popper-placement^='bottom'] .el-popper__arrow {
+        border-bottom-color: $--theme-bg-3 !important;
+    }
+
+    .el-popper[data-popper-placement^='bottom'] .el-popper__arrow::after {
+        border-bottom-color: $--theme-bg-3 !important;
+    }
+
+    .el-popper[data-popper-placement^='left'] .el-popper__arrow {
+        border-left-color: $--theme-bg-3 !important;
+    }
+
+    .el-popper[data-popper-placement^='left'] .el-popper__arrow::after {
+        border-left-color: $--theme-bg-3 !important;
+    }
+
+    .el-popper[data-popper-placement^='right'] .el-popper__arrow {
+        border-right-color: $--theme-bg-3 !important;
+    }
+
+    .el-popper[data-popper-placement^='right'] .el-popper__arrow::after {
+        border-right-color: $--theme-bg-3 !important;
+    }
+
+    .search-container {
+        border-bottom-color: $--theme-border-1 !important;
+    }
+
+    .group-header {
+        border-bottom-color: $--theme-border-1 !important;
+    }
+}
+

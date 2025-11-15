@@ -1,0 +1,2859 @@
+<template>
+    <el-dialog
+        :z-index="userDialogIndex"
+        class="x-dialog x-user-dialog user-dialog-modern"
+        v-model="userDialog.visible"
+        :show-close="false"
+        top="0"
+        width="1100px">
+        <div v-loading="userDialog.loading" class="user-dialog-container">
+            <!-- Header Section -->
+            <div class="user-dialog-header">
+                <UserSummaryHeader
+                    :get-user-state-text="getUserStateText"
+                    :copy-user-display-name="copyUserDisplayName"
+                    :toggle-badge-visibility="toggleBadgeVisibility"
+                    :toggle-badge-showcased="toggleBadgeShowcased"
+                    :user-dialog-command="userDialogCommand" />
+            </div>
+
+            <!-- Tabs Section -->
+            <div class="user-dialog-body">
+                <div class="user-dialog-tabs-container">
+                    <el-tabs v-model="userDialogLastActiveTab" @tab-click="userDialogTabClick" class="user-dialog-tabs">
+                <el-tab-pane name="Info" :label="t('dialog.user.info.header')">
+                    <div class="tab-content-wrapper">
+                        <template v-if="(isFriendOnline(userDialog.friend) || currentUser.id === userDialog.id) && isInSameInstance">
+                            <div
+                                v-if="userDialog.ref.location"
+                                class="tab-section-card instance-section">
+                            <div style="flex: none">
+                                <template v-if="isRealInstance(userDialog.$location.tag)">
+                                    <Launch :location="userDialog.$location.tag" />
+                                    <InviteYourself
+                                        :location="userDialog.$location.tag"
+                                        :shortname="userDialog.$location.shortName"
+                                        style="margin-left: 5px" />
+                                    <el-tooltip placement="top" :content="t('dialog.user.info.refresh_instance_info')"
+                                        ><el-button
+                                            size="small"
+                                            :icon="Refresh"
+                                            style="margin-left: 5px"
+                                            circle
+                                            @click="refreshInstancePlayerCount(userDialog.$location.tag)"></el-button>
+                                    </el-tooltip>
+                                    <LastJoin
+                                        :location="userDialog.$location.tag"
+                                        :currentlocation="lastLocation.location" />
+                                    <InstanceInfo
+                                        :location="userDialog.$location.tag"
+                                        :instance="userDialog.instance.ref"
+                                        :friendcount="userDialog.instance.friendCount" />
+                                </template>
+                                <Location
+                                    :location="userDialog.ref.location"
+                                    :traveling="userDialog.ref.travelingToLocation"
+                                    style="display: block; margin-top: 5px" />
+                            </div>
+                            <div class="x-friend-list" style="flex: 1; margin-top: 10px; max-height: 150px">
+                                <div
+                                    v-if="userDialog.$location.userId"
+                                    class="x-friend-item x-friend-item-border"
+                                    @click="showUserDialog(userDialog.$location.userId)">
+                                    <template v-if="userDialog.$location.user">
+                                        <div class="avatar" :class="userStatusClass(userDialog.$location.user)">
+                                            <img :src="userImage(userDialog.$location.user, true)" loading="lazy" />
+                                        </div>
+                                        <div class="detail">
+                                            <span
+                                                class="name"
+                                                :style="{ color: userDialog.$location.user.$userColour }"
+                                                v-text="userDialog.$location.user.displayName"></span>
+                                            <span class="extra">{{ t('dialog.user.info.instance_creator') }}</span>
+                                        </div>
+                                    </template>
+                                    <span v-else v-text="userDialog.$location.userId"></span>
+                                </div>
+                                <div
+                                    v-for="user in userDialog.users"
+                                    :key="user.id"
+                                    class="x-friend-item x-friend-item-border"
+                                    @click="showUserDialog(user.id)">
+                                    <div class="avatar" :class="userStatusClass(user)">
+                                        <img :src="userImage(user, true)" loading="lazy" />
+                                    </div>
+                                    <div class="detail">
+                                        <span
+                                            class="name"
+                                            :style="{ color: user.$userColour }"
+                                            v-text="user.displayName"></span>
+                                        <span v-if="user.location === 'traveling'" class="extra">
+                                            <el-icon class="is-loading" style="margin-right: 3px"><Loading /></el-icon>
+                                            <Timer :epoch="user.$travelingToTime" />
+                                        </span>
+                                        <span v-else class="extra">
+                                            <Timer :epoch="user.$location_at" />
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <div class="x-friend-list tab-content-list">
+                        <div
+                            v-if="userDialog.note && !hideUserNotes"
+                            class="x-friend-item"
+                            style="width: 100%; cursor: pointer">
+                            <div class="detail" @click="isEditNoteAndMemoDialogVisible = true">
+                                <span class="name">{{ t('dialog.user.info.note') }}</span>
+                                <pre
+                                    class="extra"
+                                    style="
+                                        font-family: inherit;
+                                        font-size: 12px;
+                                        white-space: pre-wrap;
+                                        margin: 0 0.5em 0 0;
+                                        max-height: 210px;
+                                        overflow-y: auto;
+                                    "
+                                    >{{ userDialog.note }}</pre
+                                >
+                            </div>
+                        </div>
+                        <div
+                            v-if="userDialog.memo && !hideUserMemos"
+                            class="x-friend-item"
+                            style="width: 100%; cursor: pointer">
+                            <div class="detail" @click="isEditNoteAndMemoDialogVisible = true">
+                                <span class="name">{{ t('dialog.user.info.memo') }}</span>
+                                <pre
+                                    class="extra"
+                                    style="
+                                        font-family: inherit;
+                                        font-size: 12px;
+                                        white-space: pre-wrap;
+                                        margin: 0 0.5em 0 0;
+                                        max-height: 210px;
+                                        overflow-y: auto;
+                                    "
+                                    >{{ userDialog.memo }}</pre
+                                >
+                            </div>
+                        </div>
+                        <div class="x-friend-item" style="width: 100%; cursor: default">
+                            <div class="detail">
+                                <span
+                                    v-if="
+                                        userDialog.id !== currentUser.id &&
+                                        userDialog.ref.profilePicOverride &&
+                                        userDialog.ref.currentAvatarImageUrl
+                                    "
+                                    class="name">
+                                    {{ t('dialog.user.info.avatar_info_last_seen') }}
+                                </span>
+                                <span v-else class="name">{{ t('dialog.user.info.avatar_info') }}</span>
+                                <div class="extra">
+                                    <AvatarInfo
+                                        :imageurl="userDialog.ref.currentAvatarImageUrl"
+                                        :userid="userDialog.id"
+                                        :avatartags="userDialog.ref.currentAvatarTags"
+                                        style="display: inline-block" />
+                                    <el-tooltip
+                                        v-if="
+                                            userDialog.ref.profilePicOverride && !userDialog.ref.currentAvatarImageUrl
+                                        "
+                                        placement="top"
+                                        :content="t('dialog.user.info.vrcplus_hides_avatar')">
+                                        <el-icon><Warning /></el-icon>
+                                    </el-tooltip>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="x-friend-item" style="width: 100%; cursor: default">
+                            <div class="detail">
+                                <span class="name" style="margin-bottom: 5px">{{
+                                    t('dialog.user.info.represented_group')
+                                }}</span>
+                                <div
+                                    v-if="
+                                        userDialog.isRepresentedGroupLoading ||
+                                        (userDialog.representedGroup && userDialog.representedGroup.isRepresenting)
+                                    "
+                                    class="extra">
+                                    <div style="display: inline-block; flex: none; margin-right: 5px">
+                                        <el-image
+                                            v-loading="userDialog.isRepresentedGroupLoading"
+                                            class="x-link"
+                                            :src="userDialog.representedGroup.$thumbnailUrl"
+                                            style="
+                                                flex: none;
+                                                width: 60px;
+                                                height: 60px;
+                                                border-radius: 4px;
+                                                object-fit: cover;
+                                            "
+                                            :style="{
+                                                background: userDialog.isRepresentedGroupLoading ? '#f5f7fa' : ''
+                                            }"
+                                            @load="userDialog.isRepresentedGroupLoading = false"
+                                            @click="showFullscreenImageDialog(userDialog.representedGroup.iconUrl)">
+                                            <template #error></template>
+                                        </el-image>
+                                    </div>
+                                    <span
+                                        v-if="userDialog.representedGroup.isRepresenting"
+                                        style="vertical-align: top; cursor: pointer"
+                                        @click="showGroupDialog(userDialog.representedGroup.groupId)">
+                                        <span
+                                            v-if="userDialog.representedGroup.ownerId === userDialog.id"
+                                            style="margin-right: 5px"
+                                            >👑</span
+                                        >
+                                        <span
+                                            style="margin-right: 5px"
+                                            v-text="userDialog.representedGroup.name"></span>
+                                        <span>({{ userDialog.representedGroup.memberCount }})</span>
+                                    </span>
+                                </div>
+                                <div v-else class="extra">-</div>
+                            </div>
+                        </div>
+                        <div class="x-friend-item" style="width: 100%; cursor: default">
+                            <div class="detail">
+                                <span class="name">{{ t('dialog.user.info.bio') }}</span>
+                                <pre
+                                    class="extra"
+                                    style="
+                                        font-family: inherit;
+                                        font-size: 12px;
+                                        white-space: pre-wrap;
+                                        margin: 0 0.5em 0 0;
+                                        max-height: 210px;
+                                        overflow-y: auto;
+                                    "
+                                    >{{ userDialog.ref.bio || '-' }}</pre
+                                >
+                                <div style="float: right">
+                                    <el-button
+                                        v-if="translationApi && userDialog.ref.bio"
+                                        type="text"
+                                        size="small"
+                                        style="margin-left: 5px; padding: 0"
+                                        @click="translateBio"
+                                        ><i class="ri-translate-2"></i
+                                    ></el-button>
+                                    <el-button
+                                        v-if="userDialog.id === currentUser.id"
+                                        type="text"
+                                        :icon="Edit"
+                                        size="small"
+                                        style="margin-left: 5px; padding: 0"
+                                        @click="showBioDialog"></el-button>
+                                </div>
+                                <div style="margin-top: 5px">
+                                    <el-tooltip v-for="(link, index) in userDialog.ref.bioLinks" :key="index">
+                                        <template #content>
+                                            <span v-text="link"></span>
+                                        </template>
+                                        <!-- onerror="this.onerror=null;this.class='icon-error'" -->
+                                        <img
+                                            :src="getFaviconUrl(link)"
+                                            style="
+                                                width: 16px;
+                                                height: 16px;
+                                                vertical-align: middle;
+                                                margin-right: 5px;
+                                                cursor: pointer;
+                                            "
+                                            @click.stop="openExternalLink(link)"
+                                            loading="lazy" />
+                                    </el-tooltip>
+                                </div>
+                            </div>
+                        </div>
+                        <template v-if="currentUser.id !== userDialog.id">
+                            <div class="x-friend-item" style="cursor: default">
+                                <div class="detail">
+                                    <span class="name">
+                                        {{ t('dialog.user.info.last_seen') }}
+                                        <el-tooltip placement="top" :content="t('dialog.user.info.accuracy_notice')">
+                                            <el-icon style="margin-left: 3px"><Warning /></el-icon>
+                                        </el-tooltip>
+                                    </span>
+                                    <span class="extra">{{ formatDateFilter(userDialog.lastSeen, 'long') }}</span>
+                                </div>
+                            </div>
+
+                            <div class="x-friend-item" @click="showPreviousInstancesUserDialog(userDialog.ref)">
+                                <div class="detail">
+                                    <div
+                                        class="name"
+                                        style="display: flex; justify-content: space-between; align-items: center">
+                                        <div>
+                                            {{ t('dialog.user.info.join_count') }}
+                                            <el-tooltip
+                                                placement="top"
+                                                :content="t('dialog.user.info.accuracy_notice')">
+                                                <el-icon style="margin-left: 3px"><Warning /></el-icon>
+                                            </el-tooltip>
+                                        </div>
+
+                                        <el-tooltip
+                                            placement="top"
+                                            :content="t('dialog.user.info.open_previous_instance')">
+                                            <el-icon style="margin-right: 16px"><MoreFilled /></el-icon>
+                                        </el-tooltip>
+                                    </div>
+                                    <span v-if="userDialog.joinCount === 0" class="extra">-</span>
+                                    <span v-else class="extra" v-text="userDialog.joinCount"></span>
+                                </div>
+                            </div>
+
+                            <div class="x-friend-item" style="cursor: default">
+                                <div class="detail">
+                                    <span class="name">
+                                        {{ t('dialog.user.info.time_together') }}
+                                        <el-tooltip placement="top" :content="t('dialog.user.info.accuracy_notice')">
+                                            <el-icon style="margin-left: 3px"><Warning /></el-icon>
+                                        </el-tooltip>
+                                    </span>
+                                    <span v-if="userDialog.timeSpent === 0" class="extra">-</span>
+                                    <span v-else class="extra">{{ timeToText(userDialog.timeSpent) }}</span>
+                                </div>
+                            </div>
+                        </template>
+                        <template v-else>
+                            <el-tooltip
+                                :disabled="currentUser.id !== userDialog.id"
+                                placement="top"
+                                :content="t('dialog.user.info.open_previous_instance')">
+                                <div class="x-friend-item" @click="showPreviousInstancesUserDialog(userDialog.ref)">
+                                    <div class="detail">
+                                        <span class="name">
+                                            {{ t('dialog.user.info.play_time') }}
+                                            <el-tooltip
+                                                placement="top"
+                                                :content="t('dialog.user.info.accuracy_notice')">
+                                                <el-icon style="margin-left: 3px"><Warning /></el-icon>
+                                            </el-tooltip>
+                                        </span>
+                                        <span v-if="userDialog.timeSpent === 0" class="extra">-</span>
+                                        <span v-else class="extra">{{ timeToText(userDialog.timeSpent) }}</span>
+                                    </div>
+                                </div>
+                            </el-tooltip>
+                        </template>
+                        <div class="x-friend-item" style="cursor: default">
+                            <el-tooltip :placement="currentUser.id !== userDialog.id ? 'bottom' : 'top'">
+                                <template #content>
+                                    <span>{{ formatDateFilter(userOnlineForTimestamp(userDialog), 'short') }}</span>
+                                </template>
+                                <div class="detail">
+                                    <span
+                                        v-if="userDialog.ref.state === 'online' && userDialog.ref.$online_for"
+                                        class="name">
+                                        {{ t('dialog.user.info.online_for') }}
+                                        <el-tooltip placement="top" :content="t('dialog.user.info.accuracy_notice')">
+                                            <el-icon style="margin-left: 3px"><Warning /></el-icon>
+                                        </el-tooltip>
+                                    </span>
+                                    <span v-else class="name">
+                                        {{ t('dialog.user.info.offline_for') }}
+                                        <el-tooltip placement="top" :content="t('dialog.user.info.accuracy_notice')">
+                                            <el-icon style="margin-left: 3px"><Warning /></el-icon>
+                                        </el-tooltip>
+                                    </span>
+                                    <span class="extra">{{ userOnlineFor(userDialog) }}</span>
+                                </div>
+                            </el-tooltip>
+                        </div>
+                        <div class="x-friend-item" style="cursor: default">
+                            <el-tooltip :placement="currentUser.id !== userDialog.id ? 'bottom' : 'top'">
+                                <template #content>
+                                    <span
+                                        >{{ t('dialog.user.info.last_login') }}
+                                        {{ formatDateFilter(userDialog.ref.last_login, 'long') }}</span
+                                    >
+                                    <br />
+                                    <span
+                                        >{{ t('dialog.user.info.last_activity') }}
+                                        {{ formatDateFilter(userDialog.ref.last_activity, 'long') }}</span
+                                    >
+                                </template>
+                                <div class="detail">
+                                    <span class="name">{{ t('dialog.user.info.last_activity') }}</span>
+                                    <span v-if="userDialog.ref.last_activity" class="extra">{{
+                                        timeToText(Date.now() - Date.parse(userDialog.ref.last_activity))
+                                    }}</span>
+                                    <span v-else class="extra">-</span>
+                                </div>
+                            </el-tooltip>
+                        </div>
+                        <div class="x-friend-item" style="cursor: default">
+                            <div class="detail">
+                                <span class="name">{{ t('dialog.user.info.date_joined') }}</span>
+                                <span class="extra" v-text="userDialog.ref.date_joined"></span>
+                            </div>
+                        </div>
+                        <div v-if="currentUser.id !== userDialog.id" class="x-friend-item" style="cursor: default">
+                            <div class="detail">
+                                <span v-if="userDialog.unFriended" class="name">
+                                    {{ t('dialog.user.info.unfriended') }}
+                                    <el-tooltip placement="top" :content="t('dialog.user.info.accuracy_notice')">
+                                        <el-icon style="margin-left: 3px"><Warning /></el-icon>
+                                    </el-tooltip>
+                                </span>
+                                <span v-else class="name">
+                                    {{ t('dialog.user.info.friended') }}
+                                    <el-tooltip placement="top" :content="t('dialog.user.info.accuracy_notice')">
+                                        <el-icon style="margin-left: 3px"><Warning /></el-icon>
+                                    </el-tooltip>
+                                </span>
+                                <span class="extra">{{ formatDateFilter(userDialog.dateFriended, 'long') }}</span>
+                            </div>
+                        </div>
+                        <template v-if="currentUser.id === userDialog.id">
+                            <div class="x-friend-item" @click="toggleAvatarCopying">
+                                <div class="detail">
+                                    <span class="name">{{ t('dialog.user.info.avatar_cloning') }}</span>
+                                    <span v-if="currentUser.allowAvatarCopying" class="extra" style="color: #67c23a">{{
+                                        t('dialog.user.info.avatar_cloning_allow')
+                                    }}</span>
+                                    <span v-else class="extra" style="color: #f56c6c">{{
+                                        t('dialog.user.info.avatar_cloning_deny')
+                                    }}</span>
+                                </div>
+                            </div>
+                            <div class="x-friend-item" @click="toggleAllowBooping">
+                                <div class="detail">
+                                    <span class="name">{{ t('dialog.user.info.booping') }}</span>
+                                    <span v-if="currentUser.isBoopingEnabled" class="extra" style="color: #67c23a">{{
+                                        t('dialog.user.info.avatar_cloning_allow')
+                                    }}</span>
+                                    <span v-else class="extra" style="color: #f56c6c">{{
+                                        t('dialog.user.info.avatar_cloning_deny')
+                                    }}</span>
+                                </div>
+                            </div>
+                        </template>
+                        <template v-else>
+                            <div class="x-friend-item" style="cursor: default">
+                                <div class="detail">
+                                    <span class="name">{{ t('dialog.user.info.avatar_cloning') }}</span>
+                                    <span
+                                        v-if="userDialog.ref.allowAvatarCopying"
+                                        class="extra"
+                                        style="color: #67c23a"
+                                        >{{ t('dialog.user.info.avatar_cloning_allow') }}</span
+                                    >
+                                    <span v-else class="extra" style="color: #f56c6c">{{
+                                        t('dialog.user.info.avatar_cloning_deny')
+                                    }}</span>
+                                </div>
+                            </div>
+                        </template>
+                        <div
+                            v-if="userDialog.ref.id === currentUser.id"
+                            class="x-friend-item"
+                            @click="getVRChatCredits()">
+                            <div class="detail">
+                                <span class="name">{{ t('view.profile.profile.vrchat_credits') }}</span>
+                                <span class="extra">{{ vrchatCredit ?? t('view.profile.profile.refresh') }}</span>
+                            </div>
+                        </div>
+                        <div
+                            v-if="userDialog.ref.id === currentUser.id && currentUser.homeLocation"
+                            class="x-friend-item"
+                            style="width: 100%"
+                            @click="showWorldDialog(currentUser.homeLocation)">
+                            <div class="detail">
+                                <span class="name">{{ t('dialog.user.info.home_location') }}</span>
+                                <span class="extra">
+                                    <span v-text="userDialog.$homeLocationName"></span>
+                                    <el-button
+                                        size="small"
+                                        :icon="Delete"
+                                        circle
+                                        style="margin-left: 5px"
+                                        @click.stop="resetHome()">
+                                    </el-button>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="x-friend-item" style="width: 100%; cursor: default">
+                            <div class="detail">
+                                <span class="name">{{ t('dialog.user.info.id') }}</span>
+                                <span class="extra">
+                                    {{ userDialog.id }}
+                                    <el-tooltip placement="top" :content="t('dialog.user.info.id_tooltip')">
+                                        <el-dropdown trigger="click" size="small" style="margin-left: 5px" @click.stop>
+                                            <el-button
+                                                type="default"
+                                                :icon="CopyDocument"
+                                                size="small"
+                                                circle></el-button>
+                                            <template #dropdown>
+                                                <el-dropdown-menu>
+                                                    <el-dropdown-item @click="copyUserId(userDialog.id)">{{
+                                                        t('dialog.user.info.copy_id')
+                                                    }}</el-dropdown-item>
+                                                    <el-dropdown-item @click="copyUserURL(userDialog.id)">{{
+                                                        t('dialog.user.info.copy_url')
+                                                    }}</el-dropdown-item>
+                                                    <el-dropdown-item
+                                                        @click="copyUserDisplayName(userDialog.ref.displayName)"
+                                                        >{{ t('dialog.user.info.copy_display_name') }}</el-dropdown-item
+                                                    >
+                                                </el-dropdown-menu>
+                                            </template>
+                                        </el-dropdown>
+                                    </el-tooltip>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                </el-tab-pane>
+
+                <el-tab-pane name="Groups" :label="t('dialog.user.groups.header')" lazy>
+                    <div class="tab-content-wrapper">
+                        <div class="tab-section-header">
+                        <div style="display: flex; align-items: center">
+                            <el-button
+                                type="default"
+                                :loading="userDialog.isGroupsLoading"
+                                size="small"
+                                :icon="Refresh"
+                                circle
+                                @click="getUserGroups(userDialog.id)">
+                            </el-button>
+                            <span style="margin-left: 5px">{{
+                                t('dialog.user.groups.total_count', { count: userGroups.groups.length })
+                            }}</span>
+                            <template v-if="userDialogGroupEditMode">
+                                <span style="margin-left: 10px; color: #909399; font-size: 10px">{{
+                                    t('dialog.user.groups.hold_shift')
+                                }}</span>
+                            </template>
+                        </div>
+                        <div style="display: flex; align-items: center">
+                            <template v-if="!userDialogGroupEditMode">
+                                <span style="margin-right: 5px">{{ t('dialog.user.groups.sort_by') }}</span>
+                                <el-dropdown
+                                    trigger="click"
+                                    size="small"
+                                    style="margin-right: 5px"
+                                    :disabled="userDialog.isGroupsLoading"
+                                    @click.stop>
+                                    <el-button size="small">
+                                        <span
+                                            >{{ t(userDialog.groupSorting.name) }}
+                                            <el-icon style="margin-left: 5px"><ArrowDown /></el-icon>
+                                        </span>
+                                    </el-button>
+                                    <template #dropdown>
+                                        <el-dropdown-menu>
+                                            <el-dropdown-item
+                                                v-for="(item, key) in userDialogGroupSortingOptions"
+                                                :key="key"
+                                                :disabled="
+                                                    item === userDialogGroupSortingOptions.inGame &&
+                                                    userDialog.id !== currentUser.id
+                                                "
+                                                @click="setUserDialogGroupSorting(item)"
+                                                >{{ t(item.name) }}
+                                            </el-dropdown-item>
+                                        </el-dropdown-menu>
+                                    </template>
+                                </el-dropdown>
+                            </template>
+                            <el-button
+                                v-if="userDialogGroupEditMode"
+                                size="small"
+                                :icon="Edit"
+                                style="margin-right: 5px; height: 29px; padding: 7px 15px"
+                                @click="exitEditModeCurrentUserGroups">
+                                {{ t('dialog.user.groups.exit_edit_mode') }}
+                            </el-button>
+                            <el-button
+                                v-else-if="currentUser.id === userDialog.id"
+                                size="small"
+                                :icon="Edit"
+                                style="margin-right: 5px; height: 29px; padding: 7px 15px"
+                                @click="editModeCurrentUserGroups">
+                                {{ t('dialog.user.groups.edit_mode') }}
+                            </el-button>
+                        </div>
+                    </div>
+                    <div v-loading="userDialog.isGroupsLoading" class="tab-content-body">
+                        <template v-if="userDialogGroupEditMode">
+                            <div class="x-friend-list" style="margin-top: 10px; margin-bottom: 15px; max-height: unset">
+                                <!-- Bulk actions dropdown (shown only in edit mode) -->
+                                <el-dropdown trigger="click">
+                                    <el-button
+                                        size="small"
+                                        :icon="Setting"
+                                        style="margin-right: 5px; height: 29px; padding: 7px 15px; margin-bottom: 5px">
+                                        {{ t('dialog.group.actions.manage_selected') }}
+                                        <el-icon style="margin-left: 5px"><ArrowDown /></el-icon>
+                                    </el-button>
+                                    <template #dropdown>
+                                        <el-dropdown-menu>
+                                            <el-dropdown-item @click="bulkSetVisibility('visible')">
+                                                {{ t('dialog.group.actions.visibility_everyone') }}
+                                            </el-dropdown-item>
+                                            <el-dropdown-item @click="bulkSetVisibility('friends')">
+                                                {{ t('dialog.group.actions.visibility_friends') }}
+                                            </el-dropdown-item>
+                                            <el-dropdown-item @click="bulkSetVisibility('hidden')">
+                                                {{ t('dialog.group.actions.visibility_hidden') }}
+                                            </el-dropdown-item>
+                                            <el-dropdown-item divided @click="bulkLeaveGroups">
+                                                <el-icon><Delete /></el-icon>
+                                                {{ t('dialog.user.groups.leave_group_tooltip') }}
+                                            </el-dropdown-item>
+                                        </el-dropdown-menu>
+                                    </template>
+                                </el-dropdown>
+
+                                <!-- Select All button -->
+                                <el-button
+                                    size="small"
+                                    :icon="userDialogGroupAllSelected ? Close : Check"
+                                    style="height: 29px; padding: 7px 15px; margin-bottom: 5px"
+                                    @click="selectAllGroups">
+                                    {{
+                                        userDialogGroupAllSelected
+                                            ? t('dialog.group.actions.deselect_all')
+                                            : t('dialog.group.actions.select_all')
+                                    }}
+                                </el-button>
+
+                                <div
+                                    v-for="group in userDialogGroupEditGroups"
+                                    :key="group.id"
+                                    class="x-friend-item x-friend-item-border"
+                                    style="width: 100%"
+                                    @click="showGroupDialog(group.id)">
+                                    <!-- Manual checkbox -->
+                                    <div
+                                        style="
+                                            margin-left: 5px;
+                                            margin-right: 5px;
+                                            transform-origin: left center;
+                                        "
+                                        @click.stop>
+                                        <el-checkbox
+                                            :checked="userDialogGroupEditSelectedGroupIds.includes(group.id)"
+                                            @change="() => toggleGroupSelection(group.id)" />
+                                    </div>
+
+                                    <div style="margin-right: 3px; margin-left: 5px" @click.stop>
+                                        <el-button
+                                            size="small"
+                                            :icon="Download"
+                                            style="
+                                                display: block;
+                                                padding: 7px;
+                                                font-size: 9px;
+                                                margin-left: 0;
+                                                rotate: 180deg;
+                                            "
+                                            @click="moveGroupTop(group.id)">
+                                        </el-button>
+                                        <el-button
+                                            size="small"
+                                            :icon="Download"
+                                            style="display: block; padding: 7px; font-size: 9px; margin-left: 0"
+                                            @click="moveGroupBottom(group.id)">
+                                        </el-button>
+                                    </div>
+                                    <div style="margin-right: 10px" @click.stop>
+                                        <el-button
+                                            size="small"
+                                            :icon="Top"
+                                            style="display: block; padding: 7px; font-size: 9px; margin-left: 0"
+                                            @click="moveGroupUp(group.id)">
+                                        </el-button>
+                                        <el-button
+                                            size="small"
+                                            :icon="Bottom"
+                                            style="display: block; padding: 7px; font-size: 9px; margin-left: 0"
+                                            @click="moveGroupDown(group.id)">
+                                        </el-button>
+                                    </div>
+                                    <div class="avatar">
+                                        <img :src="group.iconUrl" loading="lazy" />
+                                    </div>
+                                    <div class="detail">
+                                        <span class="name" v-text="group.name"></span>
+                                        <span class="extra">
+                                            <el-tooltip
+                                                v-if="group.isRepresenting"
+                                                placement="top"
+                                                :content="t('dialog.group.members.representing')">
+                                                <el-icon style="margin-right: 5px"><CollectionTag /></el-icon>
+                                            </el-tooltip>
+                                            <el-tooltip v-if="group.myMember.visibility !== 'visible'" placement="top">
+                                                <template #content>
+                                                    <span
+                                                        >{{ t('dialog.group.members.visibility') }}
+                                                        {{ group.myMember.visibility }}</span
+                                                    >
+                                                </template>
+                                                <el-icon style="margin-right: 5px"><View /></el-icon>
+                                            </el-tooltip>
+                                            <span>({{ group.memberCount }})</span>
+                                        </span>
+                                    </div>
+                                    <el-dropdown
+                                        :disabled="group.privacy !== 'default'"
+                                        trigger="click"
+                                        size="small"
+                                        style="margin-right: 5px">
+                                        <el-button @click.stop size="small">
+                                            <span v-if="group.myMember.visibility === 'visible'">{{
+                                                t('dialog.group.tags.visible')
+                                            }}</span>
+                                            <span v-else-if="group.myMember.visibility === 'friends'">{{
+                                                t('dialog.group.tags.friends')
+                                            }}</span>
+                                            <span v-else-if="group.myMember.visibility === 'hidden'">{{
+                                                t('dialog.group.tags.hidden')
+                                            }}</span>
+                                            <span v-else>{{ group.myMember.visibility }}</span>
+                                            <el-icon style="margin-left: 5px"><ArrowDown /></el-icon>
+                                        </el-button>
+                                        <template #dropdown>
+                                            <el-dropdown-menu>
+                                                <el-dropdown-item @click="setGroupVisibility(group.id, 'visible')">
+                                                    <el-icon v-if="group.myMember.visibility === 'visible'"
+                                                        ><Check
+                                                    /></el-icon>
+                                                    {{
+                                                        t('dialog.group.actions.visibility_everyone')
+                                                    }}</el-dropdown-item
+                                                >
+                                                <el-dropdown-item @click="setGroupVisibility(group.id, 'friends')">
+                                                    <el-icon v-if="group.myMember.visibility === 'friends'"
+                                                        ><Check
+                                                    /></el-icon>
+                                                    {{ t('dialog.group.actions.visibility_friends') }}</el-dropdown-item
+                                                >
+                                                <el-dropdown-item @click="setGroupVisibility(group.id, 'hidden')"
+                                                    ><el-icon v-if="group.myMember.visibility === 'hidden'"
+                                                        ><Check
+                                                    /></el-icon>
+                                                    {{ t('dialog.group.actions.visibility_hidden') }}</el-dropdown-item
+                                                >
+                                            </el-dropdown-menu>
+                                        </template>
+                                    </el-dropdown>
+                                    <!--//- JSON is missing isSubscribedToAnnouncements, can't be implemented-->
+                                    <!-- <el-button
+                                        @click.stop="
+                                            setGroupSubscription(group.id, !group.myMember.isSubscribedToAnnouncements)
+                                        "
+                                        size="small">
+                                        <span v-if="group.myMember.isSubscribedToAnnouncements"
+                                            ><el-icon style="margin-left: 5px"><MuteNotification /></el-icon>
+                                            {{ t('dialog.group.tags.subscribed') }}</span
+                                        >
+                                        <span v-else
+                                            ><el-icon style="margin-left: 5px"><Bell /></el-icon>
+                                            {{ t('dialog.group.tags.unsubscribed') }}</span
+                                        >
+                                    </el-button> -->
+                                    <el-tooltip
+                                        placement="right"
+                                        :content="t('dialog.user.groups.leave_group_tooltip')">
+                                        <el-button
+                                            v-if="shiftHeld"
+                                            size="small"
+                                            :icon="Close"
+                                            circle
+                                            style="color: #f56c6c; margin-left: 5px"
+                                            @click.stop="leaveGroup(group.id)">
+                                        </el-button>
+                                        <el-button
+                                            v-else
+                                            size="small"
+                                            :icon="Delete"
+                                            circle
+                                            style="margin-left: 5px"
+                                            @click.stop="leaveGroupPrompt(group.id)">
+                                        </el-button>
+                                    </el-tooltip>
+                                </div>
+                            </div>
+                        </template>
+                        <template v-else>
+                            <template v-if="userGroups.ownGroups.length > 0">
+                                <span style="font-weight: bold; font-size: 16px">{{
+                                    t('dialog.user.groups.own_groups')
+                                }}</span>
+                                <span style="color: #909399; font-size: 12px; margin-left: 5px"
+                                    >{{ userGroups.ownGroups.length }}/{{
+                                        cachedConfig?.constants?.GROUPS?.MAX_OWNED
+                                    }}</span
+                                >
+                                <div
+                                    class="x-friend-list"
+                                    style="margin-top: 10px; margin-bottom: 15px; min-height: 60px">
+                                    <div
+                                        v-for="group in userGroups.ownGroups"
+                                        :key="group.id"
+                                        class="x-friend-item x-friend-item-border"
+                                        @click="showGroupDialog(group.id)">
+                                        <div class="avatar">
+                                            <img :src="group.iconUrl" loading="lazy" />
+                                        </div>
+                                        <div class="detail">
+                                            <span class="name" v-text="group.name"></span>
+                                            <span class="extra">
+                                                <el-tooltip
+                                                    v-if="group.isRepresenting"
+                                                    placement="top"
+                                                    :content="t('dialog.group.members.representing')">
+                                                    <el-icon style="margin-right: 5px"><CollectionTag /></el-icon>
+                                                </el-tooltip>
+                                                <el-tooltip v-if="group.memberVisibility !== 'visible'" placement="top">
+                                                    <template #content>
+                                                        <span
+                                                            >{{ t('dialog.group.members.visibility') }}
+                                                            {{ group.memberVisibility }}</span
+                                                        >
+                                                    </template>
+                                                    <el-icon style="margin-right: 5px"><View /></el-icon>
+                                                </el-tooltip>
+                                                <span>({{ group.memberCount }})</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                            <template v-if="userGroups.mutualGroups.length > 0">
+                                <span style="font-weight: bold; font-size: 16px">{{
+                                    t('dialog.user.groups.mutual_groups')
+                                }}</span>
+                                <span style="color: #909399; font-size: 12px; margin-left: 5px">{{
+                                    userGroups.mutualGroups.length
+                                }}</span>
+                                <div
+                                    class="x-friend-list"
+                                    style="margin-top: 10px; margin-bottom: 15px; min-height: 60px">
+                                    <div
+                                        v-for="group in userGroups.mutualGroups"
+                                        :key="group.id"
+                                        class="x-friend-item x-friend-item-border"
+                                        @click="showGroupDialog(group.id)">
+                                        <div class="avatar">
+                                            <img :src="group.iconUrl" loading="lazy" />
+                                        </div>
+                                        <div class="detail">
+                                            <span class="name" v-text="group.name"></span>
+                                            <span class="extra">
+                                                <el-tooltip
+                                                    v-if="group.isRepresenting"
+                                                    placement="top"
+                                                    :content="t('dialog.group.members.representing')">
+                                                    <el-icon style="margin-right: 5px"><CollectionTag /></el-icon>
+                                                </el-tooltip>
+                                                <el-tooltip v-if="group.memberVisibility !== 'visible'" placement="top">
+                                                    <template #content>
+                                                        <span
+                                                            >{{ t('dialog.group.members.visibility') }}
+                                                            {{ group.memberVisibility }}</span
+                                                        >
+                                                    </template>
+                                                    <el-icon style="margin-right: 5px"><View /></el-icon>
+                                                </el-tooltip>
+                                                <span>({{ group.memberCount }})</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                            <template v-if="userGroups.remainingGroups.length > 0">
+                                <span style="font-weight: bold; font-size: 16px">{{
+                                    t('dialog.user.groups.groups')
+                                }}</span>
+                                <span style="color: #909399; font-size: 12px; margin-left: 5px">
+                                    {{ userGroups.remainingGroups.length }}
+                                    <template v-if="currentUser.id === userDialog.id">
+                                        /
+                                        <template v-if="isLocalUserVrcPlusSupporter">
+                                            {{ cachedConfig?.constants?.GROUPS?.MAX_JOINED_PLUS }}
+                                        </template>
+                                        <template v-else>
+                                            {{ cachedConfig?.constants?.GROUPS?.MAX_JOINED }}
+                                        </template>
+                                    </template>
+                                </span>
+                                <div
+                                    class="x-friend-list"
+                                    style="margin-top: 10px; margin-bottom: 15px; min-height: 60px">
+                                    <div
+                                        v-for="group in userGroups.remainingGroups"
+                                        :key="group.id"
+                                        class="x-friend-item x-friend-item-border"
+                                        @click="showGroupDialog(group.id)">
+                                        <div class="avatar">
+                                            <img :src="group.iconUrl" loading="lazy" />
+                                        </div>
+                                        <div class="detail">
+                                            <span class="name" v-text="group.name"></span>
+                                            <span class="extra">
+                                                <el-tooltip
+                                                    v-if="group.isRepresenting"
+                                                    placement="top"
+                                                    :content="t('dialog.group.members.representing')">
+                                                    <el-icon style="margin-right: 5px"><CollectionTag /></el-icon>
+                                                </el-tooltip>
+                                                <el-tooltip v-if="group.memberVisibility !== 'visible'" placement="top">
+                                                    <template #content>
+                                                        <span
+                                                            >{{ t('dialog.group.members.visibility') }}
+                                                            {{ group.memberVisibility }}</span
+                                                        >
+                                                    </template>
+                                                    <el-icon style="margin-right: 5px"><View /></el-icon>
+                                                </el-tooltip>
+                                                <span>({{ group.memberCount }})</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </template>
+                    </div>
+                    </div>
+                </el-tab-pane>
+
+                <el-tab-pane name="Worlds" :label="t('dialog.user.worlds.header')" lazy>
+                    <div class="tab-content-wrapper">
+                        <div class="tab-section-header">
+                        <div style="display: flex; align-items: center">
+                            <el-button
+                                type="default"
+                                :loading="userDialog.isWorldsLoading"
+                                size="small"
+                                :icon="Refresh"
+                                circle
+                                @click="refreshUserDialogWorlds()">
+                            </el-button>
+                            <span style="margin-left: 5px">{{
+                                t('dialog.user.worlds.total_count', { count: userDialog.worlds.length })
+                            }}</span>
+                        </div>
+                        <div style="display: flex; align-items: center">
+                            <span style="margin-right: 5px">{{ t('dialog.user.worlds.sort_by') }}</span>
+                            <el-dropdown
+                                trigger="click"
+                                size="small"
+                                style="margin-right: 5px"
+                                :disabled="userDialog.isWorldsLoading"
+                                @click.stop>
+                                <el-button size="small">
+                                    <span
+                                        >{{ t(userDialog.worldSorting.name) }}
+                                        <el-icon style="margin-left: 5px"><ArrowDown /></el-icon
+                                    ></span>
+                                </el-button>
+                                <template #dropdown>
+                                    <el-dropdown-menu>
+                                        <el-dropdown-item
+                                            v-for="(item, key) in userDialogWorldSortingOptions"
+                                            :key="key"
+                                            @click="setUserDialogWorldSorting(item)">
+                                            {{ t(item.name) }}
+                                        </el-dropdown-item>
+                                    </el-dropdown-menu>
+                                </template>
+                            </el-dropdown>
+                            <span style="margin: 0 5px">{{ t('dialog.user.worlds.order_by') }}</span>
+                            <el-dropdown
+                                trigger="click"
+                                size="small"
+                                style="margin-right: 5px"
+                                :disabled="userDialog.isWorldsLoading"
+                                @click.stop>
+                                <el-button size="small">
+                                    <span
+                                        >{{ t(userDialog.worldOrder.name) }}
+                                        <el-icon style="margin-left: 5px"><ArrowDown /></el-icon
+                                    ></span>
+                                </el-button>
+                                <template #dropdown>
+                                    <el-dropdown-menu>
+                                        <el-dropdown-item
+                                            v-for="(item, key) in userDialogWorldOrderOptions"
+                                            :key="key"
+                                            @click="setUserDialogWorldOrder(item)">
+                                            {{ t(item.name) }}
+                                        </el-dropdown-item>
+                                    </el-dropdown-menu>
+                                </template>
+                            </el-dropdown>
+                        </div>
+                    </div>
+                    <div
+                        v-loading="userDialog.isWorldsLoading"
+                        class="tab-content-body">
+                        <div class="x-friend-list tab-content-list">
+                        <div
+                            v-for="world in userDialog.worlds"
+                            :key="world.id"
+                            class="x-friend-item x-friend-item-border"
+                            @click="showWorldDialog(world.id)">
+                            <div class="avatar">
+                                <img :src="world.thumbnailImageUrl" loading="lazy" />
+                            </div>
+                            <div class="detail">
+                                <span class="name" v-text="world.name"></span>
+                                <span v-if="world.occupants" class="extra">({{ world.occupants }})</span>
+                            </div>
+                        </div>
+                        </div>
+                    </div>
+                    </div>
+                </el-tab-pane>
+
+                <el-tab-pane name="Favorite Worlds" :label="t('dialog.user.favorite_worlds.header')" lazy>
+                    <div class="tab-content-wrapper">
+                        <el-button
+                        v-if="userFavoriteWorlds && userFavoriteWorlds.length > 0"
+                        type="default"
+                        :loading="userDialog.isFavoriteWorldsLoading"
+                        size="small"
+                        :icon="Refresh"
+                        circle
+                        style="position: absolute; right: 15px; bottom: 15px; z-index: 99"
+                        @click="getUserFavoriteWorlds(userDialog.id)">
+                        </el-button>
+                        <div class="tab-content-body">
+                            <el-tabs
+                                ref="favoriteWorldsRef"
+                                v-loading="userDialog.isFavoriteWorldsLoading"
+                                class="zero-margin-tabs"
+                                type="card"
+                                stretch>
+                        <template v-if="userFavoriteWorlds && userFavoriteWorlds.length > 0">
+                            <el-tab-pane v-for="(list, index) in userFavoriteWorlds" :key="index" lazy>
+                                <template #label>
+                                    <span>
+                                        <i
+                                            class="x-status-icon"
+                                            style="margin-right: 6px"
+                                            :class="userFavoriteWorldsStatus(list[1])">
+                                        </i>
+                                        <span style="font-weight: bold; font-size: 14px" v-text="list[0]"></span>
+                                        <span style="color: #909399; font-size: 10px; margin-left: 5px"
+                                            >{{ list[2].length }}/{{ favoriteLimits.maxFavoritesPerGroup.world }}</span
+                                        >
+                                    </span>
+                                </template>
+                                <div
+                                    class="x-friend-list"
+                                    style="margin-top: 10px; margin-bottom: 15px; min-height: 60px; max-height: none">
+                                    <div
+                                        v-for="world in list[2]"
+                                        :key="world.favoriteId"
+                                        class="x-friend-item x-friend-item-border"
+                                        @click="showWorldDialog(world.id)">
+                                        <div class="avatar">
+                                            <img :src="world.thumbnailImageUrl" loading="lazy" />
+                                        </div>
+                                        <div class="detail">
+                                            <span class="name" v-text="world.name"></span>
+                                            <span v-if="world.occupants" class="extra">({{ world.occupants }})</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </el-tab-pane>
+                        </template>
+                        <template v-else-if="!userDialog.isFavoriteWorldsLoading">
+                            <div style="display: flex; justify-content: center; align-items: center; height: 100%">
+                                <span style="font-size: 16px">No favorite worlds found.</span>
+                            </div>
+                        </template>
+                            </el-tabs>
+                        </div>
+                    </div>
+                </el-tab-pane>
+
+                <el-tab-pane name="Avatars" :label="t('dialog.user.avatars.header')" lazy>
+                    <div class="tab-content-wrapper">
+                        <div class="tab-section-header">
+                        <div style="display: flex; align-items: center">
+                            <el-button
+                                v-if="userDialog.ref.id === currentUser.id"
+                                type="default"
+                                :loading="userDialog.isAvatarsLoading"
+                                size="small"
+                                :icon="Refresh"
+                                circle
+                                @click="refreshUserDialogAvatars()">
+                            </el-button>
+                            <el-button
+                                v-else
+                                type="default"
+                                :loading="userDialog.isAvatarsLoading"
+                                size="small"
+                                :icon="Refresh"
+                                circle
+                                @click="setUserDialogAvatarsRemote(userDialog.id)">
+                            </el-button>
+                            <span style="margin-left: 5px">{{
+                                t('dialog.user.avatars.total_count', { count: userDialogAvatars.length })
+                            }}</span>
+                        </div>
+                        <div>
+                            <template v-if="userDialog.ref.id === currentUser.id">
+                                <span style="margin-right: 5px">{{ t('dialog.user.avatars.sort_by') }}</span>
+                                <el-dropdown
+                                    trigger="click"
+                                    size="small"
+                                    style="margin-right: 5px"
+                                    :disabled="userDialog.isWorldsLoading"
+                                    @click.stop>
+                                    <el-button size="small">
+                                        <span
+                                            >{{ t(`dialog.user.avatars.sort_by_${userDialog.avatarSorting}`) }}
+                                            <el-icon style="margin-left: 5px"><ArrowDown /></el-icon
+                                        ></span>
+                                    </el-button>
+                                    <template #dropdown>
+                                        <el-dropdown-menu>
+                                            <el-dropdown-item @click="changeUserDialogAvatarSorting('name')">
+                                                {{ t('dialog.user.avatars.sort_by_name') }}
+                                            </el-dropdown-item>
+                                            <el-dropdown-item @click="changeUserDialogAvatarSorting('update')">
+                                                {{ t('dialog.user.avatars.sort_by_update') }}
+                                            </el-dropdown-item>
+                                        </el-dropdown-menu>
+                                    </template>
+                                </el-dropdown>
+                                <span style="margin-right: 5px; margin-left: 10px">{{
+                                    t('dialog.user.avatars.group_by')
+                                }}</span>
+                                <el-dropdown
+                                    trigger="click"
+                                    size="small"
+                                    style="margin-right: 5px"
+                                    :disabled="userDialog.isWorldsLoading"
+                                    @click.stop>
+                                    <el-button size="small">
+                                        <span
+                                            >{{ t(`dialog.user.avatars.${userDialog.avatarReleaseStatus}`) }}
+                                            <el-icon style="margin-left: 5px"><ArrowDown /></el-icon
+                                        ></span>
+                                    </el-button>
+                                    <template #dropdown>
+                                        <el-dropdown-menu>
+                                            <el-dropdown-item @click="userDialog.avatarReleaseStatus = 'all'">
+                                                {{ t('dialog.user.avatars.all') }}
+                                            </el-dropdown-item>
+                                            <el-dropdown-item @click="userDialog.avatarReleaseStatus = 'public'">
+                                                {{ t('dialog.user.avatars.public') }}
+                                            </el-dropdown-item>
+                                            <el-dropdown-item @click="userDialog.avatarReleaseStatus = 'private'">
+                                                {{ t('dialog.user.avatars.private') }}
+                                            </el-dropdown-item>
+                                        </el-dropdown-menu>
+                                    </template>
+                                </el-dropdown>
+                            </template>
+                        </div>
+                    </div>
+                    <div class="tab-content-body">
+                        <div class="x-friend-list tab-content-list">
+                        <div
+                            v-for="avatar in userDialogAvatars"
+                            :key="avatar.id"
+                            class="x-friend-item x-friend-item-border"
+                            @click="showAvatarDialog(avatar.id)">
+                            <div class="avatar">
+                                <img v-if="avatar.thumbnailImageUrl" :src="avatar.thumbnailImageUrl" loading="lazy" />
+                            </div>
+                            <div class="detail">
+                                <span class="name" v-text="avatar.name"></span>
+                                <span
+                                    v-if="avatar.releaseStatus === 'public'"
+                                    class="extra"
+                                    style="color: #67c23a"
+                                    v-text="avatar.releaseStatus">
+                                </span>
+                                <span
+                                    v-else-if="avatar.releaseStatus === 'private'"
+                                    class="extra"
+                                    style="color: #f56c6c"
+                                    v-text="avatar.releaseStatus">
+                                </span>
+                                <span v-else class="extra" v-text="avatar.releaseStatus"></span>
+                            </div>
+                        </div>
+                        </div>
+                    </div>
+                    </div>
+                </el-tab-pane>
+
+                <el-tab-pane name="JSON" :label="t('dialog.user.json.header')" lazy>
+                    <div class="tab-content-wrapper">
+                        <div class="tab-section-header">
+                            <el-button type="default" size="small" :icon="Refresh" circle @click="refreshUserDialogTreeData()">
+                            </el-button>
+                            <el-button
+                                type="default"
+                                size="small"
+                                :icon="Download"
+                                circle
+                                style="margin-left: 5px"
+                                @click="downloadAndSaveJson(userDialog.id, userDialog.ref)">
+                            </el-button>
+                        </div>
+                        <div class="tab-content-body">
+                            <el-tree :data="userDialog.treeData" class="json-tree">
+                                <template #default="scope">
+                                    <span>
+                                        <span style="font-weight: bold; margin-right: 5px" v-text="scope.data.key"></span>
+                                        <span v-if="!scope.data.children" v-text="scope.data.value"></span>
+                                    </span>
+                                </template>
+                            </el-tree>
+                        </div>
+                    </div>
+                </el-tab-pane>
+                    </el-tabs>
+                </div>
+            </div>
+        </div>
+        <SendInviteDialog
+            v-model:sendInviteDialogVisible="sendInviteDialogVisible"
+            v-model:sendInviteDialog="sendInviteDialog"
+            @closeInviteDialog="closeInviteDialog" />
+        <SendInviteRequestDialog
+            v-model:sendInviteRequestDialogVisible="sendInviteRequestDialogVisible"
+            v-model:sendInviteDialog="sendInviteDialog"
+            @closeInviteDialog="closeInviteDialog" />
+        <PreviousInstancesUserDialog v-model:previous-instances-user-dialog="previousInstancesUserDialog" />
+        <SocialStatusDialog
+            :social-status-dialog="socialStatusDialog"
+            :social-status-history-table="socialStatusHistoryTable" />
+        <LanguageDialog />
+        <BioDialog :bio-dialog="bioDialog" />
+        <PronounsDialog :pronouns-dialog="pronounsDialog" />
+        <ModerateGroupDialog />
+        <EditNoteAndMemoDialog v-model:visible="isEditNoteAndMemoDialogVisible" />
+    </el-dialog>
+</template>
+
+<script setup>
+    import {
+        ArrowDown,
+        Bottom,
+        Check,
+        Close,
+        CollectionTag,
+        CopyDocument,
+        Delete,
+        Download,
+        Edit,
+        Loading,
+        MoreFilled,
+        Refresh,
+        Setting,
+        Top,
+        View,
+        Warning
+    } from '@element-plus/icons-vue';
+    import { computed, defineAsyncComponent, nextTick, ref, watch } from 'vue';
+    import { ElMessage, ElMessageBox } from 'element-plus';
+    import { storeToRefs } from 'pinia';
+    import { useI18n } from 'vue-i18n';
+
+    import {
+        compareByMemberCount,
+        compareByName,
+        copyToClipboard,
+        downloadAndSaveJson,
+        formatDateFilter,
+        getFaviconUrl,
+        isFriendOnline,
+        isRealInstance,
+        openExternalLink,
+        parseLocation,
+        refreshInstancePlayerCount,
+        timeToText,
+        userImage,
+        userOnlineFor,
+        userOnlineForTimestamp,
+        userStatusClass
+    } from '../../../shared/utils';
+    import {
+        useAdvancedSettingsStore,
+        useAppearanceSettingsStore,
+        useAuthStore,
+        useAvatarStore,
+        useFavoriteStore,
+        useFriendStore,
+        useGalleryStore,
+        useGroupStore,
+        useInviteStore,
+        useLocationStore,
+        useModerationStore,
+        useUiStore,
+        useUserStore,
+        useWorldStore
+    } from '../../../stores';
+    import {
+        favoriteRequest,
+        friendRequest,
+        groupRequest,
+        miscRequest,
+        notificationRequest,
+        playerModerationRequest,
+        userRequest,
+        worldRequest
+    } from '../../../api';
+    import { getNextDialogIndex, redirectToToolsTab } from '../../../shared/utils/base/ui';
+    import { processBulk, request } from '../../../service/request';
+    import { userDialogWorldOrderOptions, userDialogWorldSortingOptions } from '../../../shared/constants/';
+    import { database } from '../../../service/database';
+    import { userDialogGroupSortingOptions } from '../../../shared/constants';
+
+    import SendInviteDialog from '../InviteDialog/SendInviteDialog.vue';
+    import UserSummaryHeader from './UserSummaryHeader.vue';
+
+    const BioDialog = defineAsyncComponent(() => import('./BioDialog.vue'));
+    const LanguageDialog = defineAsyncComponent(() => import('./LanguageDialog.vue'));
+    const PreviousInstancesUserDialog = defineAsyncComponent(() => import('./PreviousInstancesUserDialog.vue'));
+    const PronounsDialog = defineAsyncComponent(() => import('./PronounsDialog.vue'));
+    const SendInviteRequestDialog = defineAsyncComponent(() => import('./SendInviteRequestDialog.vue'));
+    const SocialStatusDialog = defineAsyncComponent(() => import('./SocialStatusDialog.vue'));
+    const ModerateGroupDialog = defineAsyncComponent(() => import('../ModerateGroupDialog.vue'));
+    const EditNoteAndMemoDialog = defineAsyncComponent(() => import('./EditNoteAndMemoDialog.vue'));
+
+    const { t } = useI18n();
+
+    const { hideUserNotes, hideUserMemos } = storeToRefs(useAppearanceSettingsStore());
+    const { bioLanguage, avatarRemoteDatabase, translationApi } = storeToRefs(useAdvancedSettingsStore());
+    const { translateText } = useAdvancedSettingsStore();
+    const { userDialog, languageDialog, currentUser, isLocalUserVrcPlusSupporter } = storeToRefs(useUserStore());
+    const {
+        cachedUsers,
+        showUserDialog,
+        sortUserDialogAvatars,
+        refreshUserDialogAvatars,
+        refreshUserDialogTreeData,
+        showSendBoopDialog
+    } = useUserStore();
+    const { favoriteLimits } = storeToRefs(useFavoriteStore());
+    const { showFavoriteDialog, handleFavoriteWorldList } = useFavoriteStore();
+    const { showAvatarDialog, lookupAvatars, showAvatarAuthorDialog } = useAvatarStore();
+    const { cachedAvatars } = useAvatarStore();
+    const { cachedWorlds, showWorldDialog } = useWorldStore();
+    const {
+        showGroupDialog,
+        applyGroup,
+        saveCurrentUserGroups,
+        updateInGameGroupOrder,
+        leaveGroup,
+        leaveGroupPrompt,
+        setGroupVisibility,
+        handleGroupList,
+        showModerateGroupDialog
+    } = useGroupStore();
+    const { currentUserGroups, inviteGroupDialog, inGameGroupOrder } = storeToRefs(useGroupStore());
+    const { lastLocation, lastLocationDestination } = storeToRefs(useLocationStore());
+    const { refreshInviteMessageTableData } = useInviteStore();
+    const { friendLogTable } = storeToRefs(useFriendStore());
+    const { getFriendRequest, handleFriendDelete } = useFriendStore();
+    const { clearInviteImageUpload, showFullscreenImageDialog } = useGalleryStore();
+
+    const { logout } = useAuthStore();
+    const { cachedConfig } = storeToRefs(useAuthStore());
+    const { applyPlayerModeration, handlePlayerModerationDelete } = useModerationStore();
+    const { shiftHeld } = storeToRefs(useUiStore());
+
+    watch(
+        () => userDialog.value.loading,
+        () => {
+            if (userDialog.value.visible) {
+                nextTick(() => {
+                    userDialogIndex.value = getNextDialogIndex();
+                });
+                !userDialog.value.loading && loadLastActiveTab();
+            }
+        }
+    );
+
+    const userDialogIndex = ref(2000);
+
+    // Check if viewed user is in the same instance as current user
+    const isInSameInstance = computed(() => {
+        if (!userDialog.value.ref || !userDialog.value.$location || !currentUser.value) {
+            return false;
+        }
+        const viewedUserLocation = userDialog.value.$location.tag;
+        const currentUserLocation = currentUser.value.$locationTag || lastLocation.value.location;
+        
+        // If either is offline, private, or traveling, they're not in the same instance
+        if (!isRealInstance(viewedUserLocation) || !isRealInstance(currentUserLocation)) {
+            return false;
+        }
+        
+        // Compare location tags to see if they're in the same instance
+        return viewedUserLocation === currentUserLocation;
+    });
+
+    const userDialogGroupEditMode = ref(false); // whether edit mode is active
+    const userDialogGroupEditGroups = ref([]); // editable group list
+    const userDialogGroupAllSelected = ref(false);
+    const userDialogGroupEditSelectedGroupIds = ref([]); // selected groups in edit mode
+
+    const userDialogLastActiveTab = ref('Info');
+    const userDialogLastGroup = ref('');
+    const userDialogLastAvatar = ref('');
+    const userDialogLastWorld = ref('');
+    const userDialogLastFavoriteWorld = ref('');
+    const userFavoriteWorlds = ref([]);
+    const userGroups = ref({
+        groups: [],
+        ownGroups: [],
+        mutualGroups: [],
+        remainingGroups: []
+    });
+
+    const favoriteWorldsRef = ref(null);
+
+    const sendInviteDialogVisible = ref(false);
+    const sendInviteDialog = ref({
+        messageSlot: {},
+        userId: '',
+        params: {}
+    });
+    const sendInviteRequestDialogVisible = ref(false);
+
+    const previousInstancesUserDialog = ref({
+        visible: false,
+        openFlg: false,
+        userRef: {}
+    });
+
+    const socialStatusDialog = ref({
+        visible: false,
+        loading: false,
+        status: '',
+        statusDescription: ''
+    });
+    const socialStatusHistoryTable = ref({
+        data: [],
+        tableProps: {
+            stripe: true,
+            size: 'small'
+        },
+        layout: 'table'
+    });
+
+    const bioDialog = ref({
+        visible: false,
+        loading: false,
+        bio: '',
+        bioLinks: []
+    });
+
+    const pronounsDialog = ref({
+        visible: false,
+        loading: false,
+        pronouns: ''
+    });
+
+    const bioCache = ref({
+        userId: null,
+        original: null,
+        translated: null,
+        showingTranslated: false
+    });
+
+    const isEditNoteAndMemoDialogVisible = ref(false);
+    const vrchatCredit = ref(null);
+
+    const userDialogAvatars = computed(() => {
+        const { avatars, avatarReleaseStatus } = userDialog.value;
+        if (avatarReleaseStatus === 'public' || avatarReleaseStatus === 'private') {
+            return avatars.filter((avatar) => avatar.releaseStatus === avatarReleaseStatus);
+        }
+        return avatars;
+    });
+
+    function userFavoriteWorldsStatus(visibility) {
+        const style = {};
+        if (visibility === 'public') {
+            style.green = true;
+        } else if (visibility === 'friends') {
+            style.blue = true;
+        } else {
+            style.red = true;
+        }
+        return style;
+    }
+
+    function getUserStateText(user) {
+        let state = '';
+        if (user.state === 'active') {
+            state = t('dialog.user.status.active');
+        } else if (user.state === 'offline') {
+            state = t('dialog.user.status.offline');
+        } else {
+            return getUserStatusText(user.status);
+        }
+        if (user.status && user.status !== 'active') {
+            state += ` (${getUserStatusText(user.status)})`;
+        }
+        return state;
+    }
+
+    function getUserStatusText(status) {
+        if (status === 'active') {
+            return t('dialog.user.status.active');
+        }
+        if (status === 'join me') {
+            return t('dialog.user.status.join_me');
+        }
+        if (status === 'ask me') {
+            return t('dialog.user.status.ask_me');
+        }
+        if (status === 'busy') {
+            return t('dialog.user.status.busy');
+        }
+        return t('dialog.user.status.offline');
+    }
+
+    function handleUserDialogTab(tabName) {
+        const userId = userDialog.value.id;
+        if (tabName === 'Info') {
+            if (vrchatCredit.value === null) {
+                getVRChatCredits();
+            }
+        } else if (tabName === 'Groups') {
+            if (userDialogLastGroup.value !== userId) {
+                userDialogLastGroup.value = userId;
+                getUserGroups(userId);
+            }
+        } else if (tabName === 'Avatars') {
+            setUserDialogAvatars(userId);
+            if (userDialogLastAvatar.value !== userId) {
+                userDialogLastAvatar.value = userId;
+                if (userId === currentUser.value.id) {
+                    refreshUserDialogAvatars();
+                } else {
+                    setUserDialogAvatarsRemote(userId);
+                }
+            }
+        } else if (tabName === 'Worlds') {
+            setUserDialogWorlds(userId);
+            if (userDialogLastWorld.value !== userId) {
+                userDialogLastWorld.value = userId;
+                refreshUserDialogWorlds();
+            }
+        } else if (tabName === 'Favorite Worlds') {
+            if (userDialogLastFavoriteWorld.value !== userId) {
+                userDialogLastFavoriteWorld.value = userId;
+                getUserFavoriteWorlds(userId);
+            }
+        } else if (tabName === 'JSON') {
+            refreshUserDialogTreeData();
+        }
+    }
+
+    function loadLastActiveTab() {
+        handleUserDialogTab(userDialogLastActiveTab.value);
+    }
+
+    function userDialogTabClick(obj) {
+        if (obj.props.name === userDialogLastActiveTab.value) {
+            return;
+        }
+        handleUserDialogTab(obj.props.name);
+        userDialogLastActiveTab.value = obj.props.name;
+    }
+
+    function showPronounsDialog() {
+        const D = pronounsDialog.value;
+        D.pronouns = currentUser.value.pronouns;
+        D.visible = true;
+    }
+
+    function showLanguageDialog() {
+        const D = languageDialog.value;
+        D.visible = true;
+    }
+
+    function showSocialStatusDialog() {
+        const D = socialStatusDialog.value;
+        const { statusHistory } = currentUser.value;
+        const statusHistoryArray = [];
+        for (let i = 0; i < statusHistory.length; ++i) {
+            const addStatus = {
+                no: i + 1,
+                status: statusHistory[i]
+            };
+            statusHistoryArray.push(addStatus);
+        }
+        socialStatusHistoryTable.value.data = statusHistoryArray;
+        D.status = currentUser.value.status;
+        D.statusDescription = currentUser.value.statusDescription;
+        D.visible = true;
+    }
+
+    async function setUserDialogAvatarsRemote(userId) {
+        if (avatarRemoteDatabase.value && userId !== currentUser.value.id) {
+            userDialog.value.isAvatarsLoading = true;
+            const data = await lookupAvatars('authorId', userId);
+            const avatars = new Set();
+            userDialogAvatars.value.forEach((avatar) => {
+                avatars.add(avatar.id);
+            });
+            if (data && typeof data === 'object') {
+                data.forEach((avatar) => {
+                    if (avatar.id && !avatars.has(avatar.id)) {
+                        if (avatar.authorId === userId) {
+                            userDialog.value.avatars.push(avatar);
+                        } else {
+                            console.error(`Avatar authorId mismatch for ${avatar.id} - ${avatar.name}`);
+                        }
+                    }
+                });
+            }
+            userDialog.value.avatarSorting = 'name';
+            userDialog.value.avatarReleaseStatus = 'all';
+            userDialog.value.isAvatarsLoading = false;
+        }
+        sortUserDialogAvatars(userDialog.value.avatars);
+    }
+
+    async function toggleBadgeVisibility(badge) {
+        if (badge.hidden) {
+            badge.showcased = false;
+        }
+        const args = await miscRequest.updateBadge({
+            badgeId: badge.badgeId,
+            hidden: badge.hidden,
+            showcased: badge.showcased
+        });
+        handleBadgeUpdate(args);
+    }
+
+    async function toggleBadgeShowcased(badge) {
+        if (badge.showcased) {
+            badge.hidden = false;
+        }
+        const args = await miscRequest.updateBadge({
+            badgeId: badge.badgeId,
+            hidden: badge.hidden,
+            showcased: badge.showcased
+        });
+        handleBadgeUpdate(args);
+    }
+
+    function handleBadgeUpdate(args) {
+        if (args.json) {
+            ElMessage({
+                message: t('message.badge.updated'),
+                type: 'success'
+            });
+        }
+    }
+
+    function setPlayerModeration(userId, type) {
+        const D = userDialog.value;
+        AppApi.SetVRChatUserModeration(currentUser.value.id, userId, type).then((result) => {
+            if (result) {
+                if (type === 4) {
+                    D.isShowAvatar = false;
+                    D.isHideAvatar = true;
+                } else if (type === 5) {
+                    D.isShowAvatar = true;
+                    D.isHideAvatar = false;
+                } else {
+                    D.isShowAvatar = false;
+                    D.isHideAvatar = false;
+                }
+            } else {
+                ElMessage({
+                    message: t('message.avatar.change_moderation_failed'),
+                    type: 'error'
+                });
+            }
+        });
+    }
+
+    function showSendInviteDialog(params, userId) {
+        sendInviteDialog.value = {
+            params,
+            userId,
+            messageSlot: {}
+        };
+        refreshInviteMessageTableData('message');
+        clearInviteImageUpload();
+        sendInviteDialogVisible.value = true;
+    }
+
+    function showSendInviteRequestDialog(params, userId) {
+        sendInviteDialog.value = {
+            params,
+            userId,
+            messageSlot: {}
+        };
+        refreshInviteMessageTableData('request');
+        clearInviteImageUpload();
+        sendInviteRequestDialogVisible.value = true;
+    }
+
+    function showInviteGroupDialog(groupId, userId) {
+        inviteGroupDialog.value.groupId = groupId;
+        inviteGroupDialog.value.userId = userId;
+        inviteGroupDialog.value.visible = true;
+    }
+
+    function userDialogCommand(command) {
+        let L;
+        const D = userDialog.value;
+        if (D.visible === false) {
+            return;
+        }
+        if (command === 'Refresh') {
+            showUserDialog(D.id);
+        } else if (command === 'Share') {
+            copyUserURL(D.id);
+        } else if (command === 'Add Favorite') {
+            showFavoriteDialog('friend', D.id);
+        } else if (command === 'Edit Social Status') {
+            showSocialStatusDialog();
+        } else if (command === 'Edit Language') {
+            showLanguageDialog();
+        } else if (command === 'Edit Bio') {
+            showBioDialog();
+        } else if (command === 'Edit Pronouns') {
+            showPronounsDialog();
+        } else if (command === 'Logout') {
+            logout();
+        } else if (command === 'Request Invite') {
+            notificationRequest
+                .sendRequestInvite(
+                    {
+                        platform: 'standalonewindows'
+                    },
+                    D.id
+                )
+                .then((args) => {
+                    ElMessage('Request invite sent');
+                    return args;
+                });
+        } else if (command === 'Invite Message') {
+            L = parseLocation(lastLocation.value.location);
+            worldRequest
+                .getCachedWorld({
+                    worldId: L.worldId
+                })
+                .then((args) => {
+                    showSendInviteDialog(
+                        {
+                            instanceId: lastLocation.value.location,
+                            worldId: lastLocation.value.location,
+                            worldName: args.ref.name
+                        },
+                        D.id
+                    );
+                });
+        } else if (command === 'Request Invite Message') {
+            showSendInviteRequestDialog(
+                {
+                    platform: 'standalonewindows'
+                },
+                D.id
+            );
+        } else if (command === 'Invite') {
+            let currentLocation = lastLocation.value.location;
+            if (lastLocation.value.location === 'traveling') {
+                currentLocation = lastLocationDestination.value;
+            }
+            L = parseLocation(currentLocation);
+            worldRequest
+                .getCachedWorld({
+                    worldId: L.worldId
+                })
+                .then((args) => {
+                    notificationRequest
+                        .sendInvite(
+                            {
+                                instanceId: L.tag,
+                                worldId: L.tag,
+                                worldName: args.ref.name
+                            },
+                            D.id
+                        )
+                        .then((_args) => {
+                            ElMessage('Invite sent');
+                            return _args;
+                        });
+                });
+        } else if (command === 'Show Avatar Author') {
+            const { currentAvatarImageUrl } = D.ref;
+            showAvatarAuthorDialog(D.id, D.$avatarInfo.ownerId, currentAvatarImageUrl);
+        } else if (command === 'Show Fallback Avatar Details') {
+            const { fallbackAvatar } = D.ref;
+            if (fallbackAvatar) {
+                showAvatarDialog(fallbackAvatar);
+            } else {
+                ElMessage({
+                    message: 'No fallback avatar set',
+                    type: 'error'
+                });
+            }
+        } else if (command === 'Previous Instances') {
+            showPreviousInstancesUserDialog(D.ref);
+        } else if (command === 'Manage Gallery') {
+            userDialog.value.visible = false;
+            redirectToToolsTab();
+        } else if (command === 'Invite To Group') {
+            showInviteGroupDialog('', D.id);
+        } else if (command === 'Send Boop') {
+            showSendBoopDialog(D.id);
+        } else if (command === 'Group Moderation') {
+            showModerateGroupDialog(D.id);
+        } else if (command === 'Hide Avatar') {
+            if (D.isHideAvatar) {
+                setPlayerModeration(D.id, 0);
+            } else {
+                setPlayerModeration(D.id, 4);
+            }
+        } else if (command === 'Show Avatar') {
+            if (D.isShowAvatar) {
+                setPlayerModeration(D.id, 0);
+            } else {
+                setPlayerModeration(D.id, 5);
+            }
+        } else if (command === 'Edit Note Memo') {
+            isEditNoteAndMemoDialogVisible.value = true;
+        } else {
+            const i18nPreFix = 'dialog.user.actions.';
+            const formattedCommand = command.toLowerCase().replace(/ /g, '_');
+            const displayCommandText = t(`${i18nPreFix}${formattedCommand}`).includes('i18nPreFix')
+                ? command
+                : t(`${i18nPreFix}${formattedCommand}`);
+
+            ElMessageBox.confirm(
+                t('confirm.message', {
+                    command: displayCommandText
+                }),
+                t('confirm.title'),
+                {
+                    confirmButtonText: t('confirm.confirm_button'),
+                    cancelButtonText: t('confirm.cancel_button'),
+                    type: 'info'
+                }
+            )
+                .then((action) => {
+                    if (action === 'confirm') {
+                        performUserDialogCommand(command, D.id);
+                    }
+                })
+                .catch(() => {});
+        }
+    }
+
+    function handleSendFriendRequest(args) {
+        const ref = cachedUsers.get(args.params.userId);
+        if (typeof ref === 'undefined') {
+            return;
+        }
+        const friendLogHistory = {
+            created_at: new Date().toJSON(),
+            type: 'FriendRequest',
+            userId: ref.id,
+            displayName: ref.displayName
+        };
+        friendLogTable.value.data.push(friendLogHistory);
+        database.addFriendLogHistory(friendLogHistory);
+
+        const D = userDialog.value;
+        if (D.visible === false || D.id !== args.params.userId) {
+            return;
+        }
+        if (args.json.success) {
+            D.isFriend = true;
+        } else {
+            D.outgoingRequest = true;
+        }
+    }
+
+    function handleCancelFriendRequest(args) {
+        const ref = cachedUsers.get(args.params.userId);
+        if (typeof ref === 'undefined') {
+            return;
+        }
+        const friendLogHistory = {
+            created_at: new Date().toJSON(),
+            type: 'CancelFriendRequest',
+            userId: ref.id,
+            displayName: ref.displayName
+        };
+        friendLogTable.value.data.push(friendLogHistory);
+        database.addFriendLogHistory(friendLogHistory);
+        const D = userDialog.value;
+        if (D.visible === false || D.id !== args.params.userId) {
+            return;
+        }
+        D.outgoingRequest = false;
+    }
+
+    function handleSendPlayerModeration(args) {
+        const ref = applyPlayerModeration(args.json);
+        const D = userDialog.value;
+        if (D.visible === false || (ref.targetUserId !== D.id && ref.sourceUserId !== currentUser.value.id)) {
+            return;
+        }
+        if (ref.type === 'block') {
+            D.isBlock = true;
+        } else if (ref.type === 'mute') {
+            D.isMute = true;
+        } else if (ref.type === 'interactOff') {
+            D.isInteractOff = true;
+        } else if (ref.type === 'muteChat') {
+            D.isMuteChat = true;
+        }
+        ElMessage({
+            message: t('message.user.moderated'),
+            type: 'success'
+        });
+    }
+
+    async function performUserDialogCommand(command, userId) {
+        let args;
+        let key;
+        switch (command) {
+            case 'Delete Favorite':
+                favoriteRequest.deleteFavorite({
+                    objectId: userId
+                });
+                break;
+            case 'Accept Friend Request':
+                key = getFriendRequest(userId);
+                if (key === '') {
+                    const args = await friendRequest.sendFriendRequest({
+                        userId
+                    });
+                    handleSendFriendRequest(args);
+                } else {
+                    notificationRequest.acceptFriendRequestNotification({
+                        notificationId: key
+                    });
+                }
+                break;
+            case 'Decline Friend Request':
+                key = getFriendRequest(userId);
+                if (key === '') {
+                    const args = await friendRequest.cancelFriendRequest({
+                        userId
+                    });
+                    handleCancelFriendRequest(args);
+                } else {
+                    notificationRequest.hideNotification({
+                        notificationId: key
+                    });
+                }
+                break;
+            case 'Cancel Friend Request': {
+                args = await friendRequest.cancelFriendRequest({
+                    userId
+                });
+                handleCancelFriendRequest(args);
+                break;
+            }
+            case 'Send Friend Request': {
+                args = await friendRequest.sendFriendRequest({
+                    userId
+                });
+                handleSendFriendRequest(args);
+                break;
+            }
+            case 'Moderation Unblock':
+                args = await playerModerationRequest.deletePlayerModeration({
+                    moderated: userId,
+                    type: 'block'
+                });
+                handlePlayerModerationDelete(args);
+                break;
+            case 'Moderation Block': {
+                args = await playerModerationRequest.sendPlayerModeration({
+                    moderated: userId,
+                    type: 'block'
+                });
+                handleSendPlayerModeration(args);
+                break;
+            }
+            case 'Moderation Unmute':
+                args = await playerModerationRequest.deletePlayerModeration({
+                    moderated: userId,
+                    type: 'mute'
+                });
+                handlePlayerModerationDelete(args);
+                break;
+            case 'Moderation Mute': {
+                args = await playerModerationRequest.sendPlayerModeration({
+                    moderated: userId,
+                    type: 'mute'
+                });
+                handleSendPlayerModeration(args);
+                break;
+            }
+            case 'Moderation Enable Avatar Interaction':
+                args = await playerModerationRequest.deletePlayerModeration({
+                    moderated: userId,
+                    type: 'interactOff'
+                });
+                handlePlayerModerationDelete(args);
+                break;
+            case 'Moderation Disable Avatar Interaction': {
+                args = await playerModerationRequest.sendPlayerModeration({
+                    moderated: userId,
+                    type: 'interactOff'
+                });
+                handleSendPlayerModeration(args);
+                break;
+            }
+            case 'Moderation Enable Chatbox':
+                args = await playerModerationRequest.deletePlayerModeration({
+                    moderated: userId,
+                    type: 'muteChat'
+                });
+                handlePlayerModerationDelete(args);
+                break;
+            case 'Moderation Disable Chatbox': {
+                args = await playerModerationRequest.sendPlayerModeration({
+                    moderated: userId,
+                    type: 'muteChat'
+                });
+                handleSendPlayerModeration(args);
+                break;
+            }
+            case 'Report Hacking':
+                reportUserForHacking(userId);
+                break;
+            case 'Unfriend':
+                args = await friendRequest.deleteFriend({
+                    userId
+                });
+                handleFriendDelete(args);
+                break;
+        }
+    }
+
+    function reportUserForHacking(userId) {
+        miscRequest.reportUser({
+            userId,
+            contentType: 'user',
+            reason: 'behavior-hacking',
+            type: 'report'
+        });
+    }
+
+    async function getUserGroups(userId) {
+        exitEditModeCurrentUserGroups();
+        userDialog.value.isGroupsLoading = true;
+        userGroups.value = {
+            groups: [],
+            ownGroups: [],
+            mutualGroups: [],
+            remainingGroups: []
+        };
+        const args = await groupRequest.getGroups({ userId });
+        handleGroupList(args);
+        if (userId !== userDialog.value.id) {
+            userDialog.value.isGroupsLoading = false;
+            return;
+        }
+        if (userId === currentUser.value.id) {
+            // update current user groups
+            currentUserGroups.value.clear();
+            args.json.forEach((group) => {
+                const ref = applyGroup(group);
+                if (!currentUserGroups.value.has(group.id)) {
+                    currentUserGroups.value.set(group.id, ref);
+                }
+            });
+
+            saveCurrentUserGroups();
+        }
+        userGroups.value.groups = args.json;
+        for (let i = 0; i < args.json.length; ++i) {
+            const group = args.json[i];
+            if (!group?.id) {
+                console.error('getUserGroups, group ID is missing', group);
+                continue;
+            }
+            if (group.ownerId === userId) {
+                userGroups.value.ownGroups.unshift(group);
+            }
+            if (userId === currentUser.value.id) {
+                // skip mutual groups for current user
+                if (group.ownerId !== userId) {
+                    userGroups.value.remainingGroups.unshift(group);
+                }
+                continue;
+            }
+            if (group.mutualGroup) {
+                userGroups.value.mutualGroups.unshift(group);
+            }
+            if (!group.mutualGroup && group.ownerId !== userId) {
+                userGroups.value.remainingGroups.unshift(group);
+            }
+        }
+        if (userId === currentUser.value.id) {
+            userDialog.value.groupSorting = userDialogGroupSortingOptions.inGame;
+        } else if (userDialog.value.groupSorting.value === userDialogGroupSortingOptions.inGame.value) {
+            userDialog.value.groupSorting = userDialogGroupSortingOptions.alphabetical;
+        }
+        await sortCurrentUserGroups();
+        userDialog.value.isGroupsLoading = false;
+    }
+
+    function sortGroupsByInGame(a, b) {
+        const aIndex = inGameGroupOrder.value.indexOf(a?.id);
+        const bIndex = inGameGroupOrder.value.indexOf(b?.id);
+        if (aIndex === -1 && bIndex === -1) {
+            return 0;
+        }
+        if (aIndex === -1) {
+            return 1;
+        }
+        if (bIndex === -1) {
+            return -1;
+        }
+        return aIndex - bIndex;
+    }
+
+    async function sortCurrentUserGroups() {
+        const D = userDialog.value;
+        let sortMethod = () => 0;
+
+        switch (D.groupSorting.value) {
+            case 'alphabetical':
+                sortMethod = compareByName;
+                break;
+            case 'members':
+                sortMethod = compareByMemberCount;
+                break;
+            case 'inGame':
+                sortMethod = sortGroupsByInGame;
+                await updateInGameGroupOrder();
+                break;
+        }
+
+        userGroups.value.ownGroups.sort(sortMethod);
+        userGroups.value.mutualGroups.sort(sortMethod);
+        userGroups.value.remainingGroups.sort(sortMethod);
+    }
+
+    function setUserDialogAvatars(userId) {
+        const avatars = new Set();
+        userDialogAvatars.value.forEach((avatar) => {
+            avatars.add(avatar.id);
+        });
+        for (const ref of cachedAvatars.values()) {
+            if (ref.authorId === userId && !avatars.has(ref.id)) {
+                userDialog.value.avatars.push(ref);
+            }
+        }
+        sortUserDialogAvatars(userDialog.value.avatars);
+    }
+
+    function setUserDialogWorlds(userId) {
+        const worlds = [];
+        for (const ref of cachedWorlds.values()) {
+            if (ref.authorId === userId) {
+                worlds.push(ref);
+            }
+        }
+        userDialog.value.worlds = worlds;
+    }
+
+    function refreshUserDialogWorlds() {
+        const D = userDialog.value;
+        if (D.isWorldsLoading) {
+            return;
+        }
+        D.isWorldsLoading = true;
+        const params = {
+            n: 50,
+            offset: 0,
+            sort: userDialog.value.worldSorting.value,
+            order: userDialog.value.worldOrder.value,
+            // user: 'friends',
+            userId: D.id,
+            releaseStatus: 'public'
+        };
+        if (params.userId === currentUser.value.id) {
+            params.user = 'me';
+            params.releaseStatus = 'all';
+        }
+        const map = new Map();
+        for (const ref of cachedWorlds.values()) {
+            if (ref.authorId === D.id && (ref.authorId === currentUser.value.id || ref.releaseStatus === 'public')) {
+                cachedWorlds.delete(ref.id);
+            }
+        }
+        processBulk({
+            fn: worldRequest.getWorlds,
+            N: -1,
+            params,
+            handle: (args) => {
+                for (const json of args.json) {
+                    const $ref = cachedWorlds.get(json.id);
+                    if (typeof $ref !== 'undefined') {
+                        map.set($ref.id, $ref);
+                    }
+                }
+            },
+            done: () => {
+                if (D.id === params.userId) {
+                    setUserDialogWorlds(D.id);
+                }
+                D.isWorldsLoading = false;
+            }
+        });
+    }
+
+    async function getUserFavoriteWorlds(userId) {
+        userDialog.value.isFavoriteWorldsLoading = true;
+        if (favoriteWorldsRef.value) {
+            favoriteWorldsRef.value.currentName = '0'; // select first tab
+        }
+        userFavoriteWorlds.value = [];
+        const worldLists = [];
+        let params = {
+            ownerId: userId,
+            n: 100,
+            offset: 0
+        };
+        const json = await request('favorite/groups', {
+            method: 'GET',
+            params
+        });
+        for (let i = 0; i < json.length; ++i) {
+            const list = json[i];
+            if (list.type !== 'world') {
+                continue;
+            }
+            params = {
+                ownerId: userId,
+                n: 100,
+                offset: 0,
+                userId,
+                tag: list.name
+            };
+            try {
+                const args = await favoriteRequest.getFavoriteWorlds(params);
+                handleFavoriteWorldList(args);
+                worldLists.push([list.displayName, list.visibility, args.json]);
+            } catch (err) {
+                console.error('getUserFavoriteWorlds', err);
+            }
+        }
+        userFavoriteWorlds.value = worldLists;
+        userDialog.value.isFavoriteWorldsLoading = false;
+    }
+
+    function showBioDialog() {
+        const D = bioDialog.value;
+        D.bio = currentUser.value.bio;
+        D.bioLinks = currentUser.value.bioLinks.slice();
+        D.visible = true;
+    }
+
+    async function translateBio() {
+        const bio = userDialog.value.ref.bio;
+        if (!bio) {
+            return;
+        }
+
+        const targetLang = bioLanguage.value;
+
+        if (bioCache.value.userId !== userDialog.value.id) {
+            bioCache.value.userId = userDialog.value.id;
+            bioCache.value.original = null;
+            bioCache.value.translated = null;
+            bioCache.value.showingTranslated = false;
+        }
+
+        if (!bioCache.value.original) {
+            bioCache.value.original = bio;
+        }
+
+        if (bioCache.value.showingTranslated) {
+            userDialog.value.ref.bio = bioCache.value.original;
+            bioCache.value.showingTranslated = false;
+            return;
+        }
+
+        if (bioCache.value.translated) {
+            userDialog.value.ref.bio = bioCache.value.translated;
+            bioCache.value.showingTranslated = true;
+            return;
+        }
+
+        try {
+            const translated = await translateText(bio + '\n\nTranslated by Google', targetLang);
+            if (!translated) {
+                throw new Error('No translation returned');
+            }
+
+            bioCache.value.translated = translated;
+            bioCache.value.showingTranslated = true;
+            userDialog.value.ref.bio = translated;
+        } catch (err) {
+            console.error('Translation failed:', err);
+        }
+    }
+
+    function showPreviousInstancesUserDialog(userRef) {
+        const D = previousInstancesUserDialog.value;
+        D.userRef = userRef;
+        D.visible = true;
+        // trigger watcher
+        D.openFlg = true;
+        nextTick(() => (D.openFlg = false));
+    }
+
+    function toggleAvatarCopying() {
+        userRequest.saveCurrentUser({
+            allowAvatarCopying: !currentUser.value.allowAvatarCopying
+        });
+    }
+
+    function toggleAllowBooping() {
+        userRequest.saveCurrentUser({
+            isBoopingEnabled: !currentUser.value.isBoopingEnabled
+        });
+    }
+
+    function resetHome() {
+        ElMessageBox.confirm('Continue? Reset Home', 'Confirm', {
+            confirmButtonText: 'Confirm',
+            cancelButtonText: 'Cancel',
+            type: 'info'
+        })
+            .then((action) => {
+                if (action === 'confirm') {
+                    userRequest
+                        .saveCurrentUser({
+                            homeLocation: ''
+                        })
+                        .then((args) => {
+                            ElMessage({
+                                message: 'Home world has been reset',
+                                type: 'success'
+                            });
+                            return args;
+                        });
+                }
+            })
+            .catch(() => {});
+    }
+
+    function copyUserId(userId) {
+        copyToClipboard(userId, 'User ID copied to clipboard');
+    }
+
+    function copyUserURL(userId) {
+        copyToClipboard(`https://vrchat.com/home/user/${userId}`, 'User URL copied to clipboard');
+    }
+
+    function copyUserDisplayName(displayName) {
+        copyToClipboard(displayName, 'User DisplayName copied to clipboard');
+    }
+
+    async function setUserDialogGroupSorting(sortOrder) {
+        const D = userDialog.value;
+        if (D.groupSorting.value === sortOrder.value) {
+            return;
+        }
+        D.groupSorting = sortOrder;
+        await sortCurrentUserGroups();
+    }
+
+    async function exitEditModeCurrentUserGroups() {
+        userDialogGroupEditMode.value = false;
+        userDialogGroupEditGroups.value = [];
+        userDialogGroupEditSelectedGroupIds.value = [];
+        userDialogGroupAllSelected.value = false;
+        await sortCurrentUserGroups();
+    }
+
+    async function editModeCurrentUserGroups() {
+        await updateInGameGroupOrder();
+        userDialogGroupEditGroups.value = Array.from(currentUserGroups.value.values());
+        userDialogGroupEditGroups.value.sort(sortGroupsByInGame);
+        userDialogGroupEditMode.value = true;
+    }
+
+    async function saveInGameGroupOrder() {
+        userDialogGroupEditGroups.value.sort(sortGroupsByInGame);
+        try {
+            await AppApi.SetVRChatRegistryKey(
+                `VRC_GROUP_ORDER_${currentUser.value.id}`,
+                JSON.stringify(inGameGroupOrder.value),
+                3
+            );
+        } catch (err) {
+            console.error(err);
+            ElMessage({
+                message: 'Failed to save in-game group order',
+                type: 'error'
+            });
+        }
+    }
+
+    // Select all groups currently in the editable list by collecting their IDs
+    function selectAllGroups() {
+        const allSelected = userDialogGroupEditSelectedGroupIds.value.length === userDialogGroupEditGroups.value.length;
+
+        // First update selection state
+        userDialogGroupEditSelectedGroupIds.value = allSelected ? [] : userDialogGroupEditGroups.value.map((g) => g.id);
+        userDialogGroupAllSelected.value = !allSelected;
+
+        // Toggle editMode off and back on to force checkbox UI update
+        userDialogGroupEditMode.value = false;
+        nextTick(() => {
+            userDialogGroupEditMode.value = true;
+        });
+    }
+
+    // Apply the given visibility to all selected groups
+    async function bulkSetVisibility(newVisibility) {
+        for (const groupId of userDialogGroupEditSelectedGroupIds.value) {
+            setGroupVisibility(groupId, newVisibility);
+        }
+    }
+
+    // Leave (remove user from) all selected groups
+    function bulkLeaveGroups() {
+        for (const groupId of userDialogGroupEditSelectedGroupIds.value) {
+            leaveGroup(groupId);
+        }
+    }
+
+    // Toggle individual group selection for bulk actions
+    function toggleGroupSelection(groupId) {
+        const index = userDialogGroupEditSelectedGroupIds.value.indexOf(groupId);
+        if (index === -1) {
+            userDialogGroupEditSelectedGroupIds.value.push(groupId);
+        } else {
+            userDialogGroupEditSelectedGroupIds.value.splice(index, 1);
+        }
+    }
+
+    function moveGroupUp(groupId) {
+        const index = inGameGroupOrder.value.indexOf(groupId);
+        if (index > 0) {
+            inGameGroupOrder.value.splice(index, 1);
+            inGameGroupOrder.value.splice(index - 1, 0, groupId);
+            saveInGameGroupOrder();
+        }
+    }
+
+    function moveGroupDown(groupId) {
+        const index = inGameGroupOrder.value.indexOf(groupId);
+        if (index < inGameGroupOrder.value.length - 1) {
+            inGameGroupOrder.value.splice(index, 1);
+            inGameGroupOrder.value.splice(index + 1, 0, groupId);
+            saveInGameGroupOrder();
+        }
+    }
+
+    function moveGroupTop(groupId) {
+        const index = inGameGroupOrder.value.indexOf(groupId);
+        if (index > 0) {
+            inGameGroupOrder.value.splice(index, 1);
+            inGameGroupOrder.value.unshift(groupId);
+            saveInGameGroupOrder();
+        }
+    }
+
+    function moveGroupBottom(groupId) {
+        const index = inGameGroupOrder.value.indexOf(groupId);
+        if (index < inGameGroupOrder.value.length - 1) {
+            inGameGroupOrder.value.splice(index, 1);
+            inGameGroupOrder.value.push(groupId);
+            saveInGameGroupOrder();
+        }
+    }
+
+    async function setUserDialogWorldSorting(sortOrder) {
+        const D = userDialog.value;
+        if (D.worldSorting.value === sortOrder.value) {
+            return;
+        }
+        D.worldSorting = sortOrder;
+        refreshUserDialogWorlds();
+    }
+
+    async function setUserDialogWorldOrder(order) {
+        const D = userDialog.value;
+        if (D.worldOrder.value === order.value) {
+            return;
+        }
+        D.worldOrder = order;
+        refreshUserDialogWorlds();
+    }
+
+    function changeUserDialogAvatarSorting(sortOption) {
+        const D = userDialog.value;
+        D.avatarSorting = sortOption;
+        sortUserDialogAvatars(D.avatars);
+    }
+
+    function closeInviteDialog() {
+        clearInviteImageUpload();
+    }
+
+    function getVRChatCredits() {
+        miscRequest.getVRChatCredits().then((args) => (vrchatCredit.value = args.json?.balance));
+    }
+</script>
+
+<style scoped lang="scss">
+    .user-dialog-modern {
+        :deep(.el-overlay) {
+            height: 100vh !important;
+            width: 100vw !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        :deep(.el-dialog__wrapper) {
+            height: 100vh !important;
+            width: 100vw !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        :deep(.el-dialog) {
+            background: rgba(0, 0, 0, 0.98) !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            border-radius: 0 !important;
+            box-shadow: 0 24px 96px rgba(0, 0, 0, 0.95) !important;
+            backdrop-filter: blur(20px);
+            margin: 0 !important;
+            padding: 0 !important;
+            height: 100vh !important;
+            width: 100vw !important;
+            max-width: 100vw !important;
+            max-height: 100vh !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+
+        :deep(.el-dialog__header) {
+            display: none;
+        }
+
+        :deep(.el-dialog__body) {
+            padding: 0 !important;
+            margin: 0 !important;
+            background: transparent !important;
+            flex: 1 1 auto !important;
+            min-height: 0 !important;
+            overflow: hidden !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+    }
+
+    .user-dialog-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        overflow: hidden;
+    }
+
+    .user-dialog-header {
+        flex-shrink: 0;
+    }
+
+    .user-dialog-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .user-dialog-tabs-container {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.02);
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .user-dialog-tabs {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        overflow: hidden;
+        background: transparent;
+
+        :deep(.el-tabs__header) {
+            margin: 0;
+            padding: 0 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
+        }
+
+        :deep(.el-tabs__nav-wrap) {
+            &::after {
+                display: none;
+            }
+        }
+
+        :deep(.el-tabs__nav) {
+            border: none;
+            display: flex;
+            gap: 2px;
+        }
+
+        :deep(.el-tabs__item) {
+            color: rgba(255, 255, 255, 0.5) !important;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 16px 20px;
+            border: none;
+            border-radius: 0;
+            transition: all 0.2s ease;
+            margin: 0;
+            position: relative;
+            background: transparent;
+
+            &::after {
+                content: '';
+                position: absolute;
+                bottom: 0;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 0;
+                height: 2px;
+                background: rgba(255, 255, 255, 0.5);
+                transition: all 0.2s ease;
+            }
+
+            &:hover {
+                color: rgba(255, 255, 255, 0.8) !important;
+                background: rgba(255, 255, 255, 0.03);
+            }
+
+            &.is-active {
+                color: rgba(255, 255, 255, 0.98) !important;
+                font-weight: 600;
+                background: rgba(255, 255, 255, 0.05);
+
+                &::after {
+                    width: 60%;
+                }
+            }
+        }
+
+        :deep(.el-tabs__active-bar) {
+            display: none;
+        }
+
+        :deep(.el-tabs__content) {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            background: transparent;
+        }
+
+        :deep(.el-tab-pane) {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 20px 20px 80px 20px;
+            background: transparent;
+
+            // Modern content wrapper
+            .tab-content-wrapper {
+                display: flex;
+                flex-direction: column;
+                height: 100%;
+                gap: 16px;
+                overflow: hidden;
+            }
+
+            // Modern section headers
+            .tab-section-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                background: rgba(255, 255, 255, 0.04);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 12px;
+                padding: 16px 20px;
+                flex-shrink: 0;
+            }
+
+            // Modern section cards
+            .tab-section-card {
+                background: rgba(255, 255, 255, 0.04);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 12px;
+                padding: 16px 20px;
+                margin-bottom: 16px;
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+
+                &.instance-section {
+                    .x-friend-list {
+                        background: rgba(255, 255, 255, 0.02);
+                        border-radius: 8px;
+                        padding: 12px;
+                        margin-top: 12px;
+                    }
+                }
+            }
+
+            // Modern content body
+            .tab-content-body {
+                flex: 1;
+                overflow-y: auto;
+                overflow-x: hidden;
+                min-height: 0;
+                max-height: 100%;
+            }
+
+            // Modern content list
+            .tab-content-list {
+                background: transparent;
+                max-height: none;
+            }
+
+            // Modern friend list items
+            .x-friend-list {
+                background: transparent;
+
+                .x-friend-item {
+                    background: rgba(255, 255, 255, 0.04);
+                    border: 1px solid rgba(255, 255, 255, 0.08);
+                    border-radius: 12px;
+                    padding: 12px 16px;
+                    margin-bottom: 8px;
+                    transition: all 0.2s ease;
+
+                    &:hover {
+                        background: rgba(255, 255, 255, 0.06);
+                        border-color: rgba(255, 255, 255, 0.12);
+                    }
+
+                    &.x-friend-item-border {
+                        border: 1px solid rgba(255, 255, 255, 0.08);
+                    }
+
+                    .avatar {
+                        border-radius: 8px;
+                        overflow: hidden;
+                    }
+
+                    .detail {
+                        .name {
+                            color: rgba(255, 255, 255, 0.95);
+                            font-weight: 500;
+                        }
+
+                        .extra {
+                            color: rgba(255, 255, 255, 0.6);
+                            font-size: 12px;
+                        }
+                    }
+                }
+            }
+
+            // Modern buttons
+            .el-button {
+                background: rgba(255, 255, 255, 0.06) !important;
+                border: 1px solid rgba(255, 255, 255, 0.12) !important;
+                color: rgba(255, 255, 255, 0.9) !important;
+                transition: all 0.2s ease;
+
+                &:hover {
+                    background: rgba(255, 255, 255, 0.1) !important;
+                    border-color: rgba(255, 255, 255, 0.18) !important;
+                }
+            }
+
+            // JSON tree styling
+            .json-tree {
+                background: rgba(255, 255, 255, 0.02);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 12px;
+                padding: 16px;
+                font-size: 12px;
+                color: rgba(255, 255, 255, 0.8);
+                font-family: 'Courier New', monospace;
+
+                :deep(.el-tree-node__content) {
+                    color: rgba(255, 255, 255, 0.8);
+                    padding: 4px 0;
+
+                    &:hover {
+                        background: rgba(255, 255, 255, 0.04);
+                    }
+                }
+
+                :deep(.el-tree-node__expand-icon) {
+                    color: rgba(255, 255, 255, 0.5);
+                }
+            }
+
+            &::-webkit-scrollbar {
+                width: 8px;
+            }
+
+            &::-webkit-scrollbar-track {
+                background: rgba(255, 255, 255, 0.02);
+                border-radius: 4px;
+            }
+
+            &::-webkit-scrollbar-thumb {
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 4px;
+                border: 2px solid transparent;
+                background-clip: padding-box;
+
+                &:hover {
+                    background: rgba(255, 255, 255, 0.18);
+                    background-clip: padding-box;
+                }
+            }
+        }
+    }
+</style>

@@ -1,0 +1,2985 @@
+@charset "utf-8";
+
+//
+// Copyright(c) 2019-2025 pypy and individual contributors.
+// All rights reserved.
+//
+// This work is licensed under the terms of the MIT license.
+// For a copy, see <https://opensource.org/licenses/MIT>.
+//
+
+// Light theme scrollbar
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f5f5f5;
+    border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #d0d0d0;
+    border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #b0b0b0;
+}
+
+// Light theme base
+:root:not(.dark) {
+    color-scheme: light;
+}
+
+html:not(.dark),
+body:not(.dark) {
+    background: #ffffff;
+    background-attachment: fixed;
+}
+
+body:not(.dark),
+input:not(.dark),
+textarea:not(.dark),
+select:not(.dark),
+button:not(.dark) {
+    color: #333333;
+}
+
+// Dark theme styles
+.dark {
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 8px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 8px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.25);
+    }
+
+    :root {
+        color-scheme: dark;
+    }
+
+    html,
+    body {
+        background: #000000;
+        background-attachment: fixed;
+    }
+
+    body,
+    input,
+    textarea,
+    select,
+    button {
+        color: rgba(255, 255, 255, 0.95);
+    }
+
+    // Dialogs
+    .el-dialog__wrapper {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        overflow: hidden !important;
+    }
+
+    .el-overlay {
+        background: rgba(0, 0, 0, 0.7) !important;
+    }
+
+    .el-dialog {
+        background: rgba(8, 8, 10, 0.98) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 20px !important;
+        box-shadow: 0 20px 80px rgba(0, 0, 0, 0.9) !important;
+        color: rgba(255, 255, 255, 0.95) !important;
+        max-width: 95vw !important;
+        max-height: 90vh !important;
+        margin: 0 auto !important;
+        position: relative !important;
+        top: auto !important;
+        left: auto !important;
+        transform: none !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+        
+        .el-dialog__header {
+            padding: 20px 24px !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+            background: rgba(0, 0, 0, 0.3) !important;
+            flex-shrink: 0 !important;
+        }
+        
+        .el-dialog__body {
+            padding: 24px !important;
+            max-height: calc(90vh - 140px) !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            background: transparent !important;
+            flex: 1 !important;
+            min-height: 0 !important;
+        }
+        
+        .el-dialog__footer {
+            padding: 16px 24px !important;
+            border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+            background: rgba(0, 0, 0, 0.3) !important;
+            flex-shrink: 0 !important;
+        }
+    }
+
+    // Message boxes
+    .el-message-box {
+        background: rgba(8, 8, 10, 0.98) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 16px !important;
+        box-shadow: 0 20px 80px rgba(0, 0, 0, 0.9) !important;
+        color: rgba(255, 255, 255, 0.95) !important;
+        max-width: 90vw !important;
+        max-height: 90vh !important;
+    }
+
+    .el-dialog__title {
+        color: rgba(255, 255, 255, 0.95) !important;
+    }
+
+    .el-message-box__title {
+        color: rgba(255, 255, 255, 0.95) !important;
+    }
+
+    .el-dialog__body {
+        color: rgba(255, 255, 255, 0.9) !important;
+    }
+
+    .el-message-box__message,
+    .el-message-box__content {
+        color: rgba(255, 255, 255, 0.9) !important;
+    }
+}
+
+// Light theme dialogs
+.el-dialog__wrapper {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+}
+
+html:not(.dark) .el-overlay {
+    background: rgba(0, 0, 0, 0.5) !important;
+}
+
+html:not(.dark) .el-dialog {
+    background: #ffffff !important;
+    border: 1px solid #e0e0e0 !important;
+    border-radius: 20px !important;
+    box-shadow: 0 20px 80px rgba(0, 0, 0, 0.15) !important;
+    color: #333333 !important;
+    max-width: 95vw !important;
+    max-height: 90vh !important;
+    margin: 0 auto !important;
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    transform: none !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    
+    .el-dialog__header {
+        padding: 20px 24px !important;
+        border-bottom: 1px solid #e0e0e0 !important;
+        background: #f5f5f5 !important;
+        flex-shrink: 0 !important;
+    }
+    
+    .el-dialog__body {
+        padding: 24px !important;
+        max-height: calc(90vh - 140px) !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        background: transparent !important;
+        flex: 1 !important;
+        min-height: 0 !important;
+    }
+    
+    .el-dialog__footer {
+        padding: 16px 24px !important;
+        border-top: 1px solid #e0e0e0 !important;
+        background: #f5f5f5 !important;
+        flex-shrink: 0 !important;
+    }
+}
+
+html:not(.dark) .el-message-box {
+    background: #ffffff !important;
+    border: 1px solid #e0e0e0 !important;
+    border-radius: 16px !important;
+    box-shadow: 0 20px 80px rgba(0, 0, 0, 0.15) !important;
+    color: #333333 !important;
+    max-width: 90vw !important;
+    max-height: 90vh !important;
+}
+
+html:not(.dark) .el-dialog__title,
+html:not(.dark) .el-message-box__title {
+    color: #333333 !important;
+}
+
+html:not(.dark) .el-dialog__body,
+html:not(.dark) .el-message-box__message,
+html:not(.dark) .el-message-box__content {
+    color: #666666 !important;
+}
+
+// Ensure all text in light theme dialogs is dark
+html:not(.dark) .el-dialog {
+    * {
+        color: #333333 !important;
+    }
+    
+    .el-dialog__header *,
+    .el-dialog__body *,
+    .el-dialog__footer * {
+        color: #333333 !important;
+    }
+    
+    // But allow specific overrides for secondary text
+    .el-dialog__body p,
+    .el-dialog__body span:not(.el-tag),
+    .el-dialog__body div:not(.el-button):not(.el-input):not(.el-select) {
+        color: #666666 !important;
+    }
+    
+    // Ensure labels and form elements are visible
+    .el-form-item__label {
+        color: #333333 !important;
+    }
+    
+    // Ensure buttons maintain their colors
+    .el-button {
+        color: inherit !important;
+    }
+    
+    .el-button--primary {
+        color: #ffffff !important;
+    }
+}
+
+// Ensure all text in light theme message boxes is dark
+html:not(.dark) .el-message-box {
+    * {
+        color: #333333 !important;
+    }
+    
+    .el-message-box__title,
+    .el-message-box__message,
+    .el-message-box__content {
+        color: #333333 !important;
+    }
+    
+    .el-message-box__message p {
+        color: #666666 !important;
+    }
+}
+
+.dark {
+    .el-dropdown-menu,
+    .el-select-dropdown,
+    .el-popover,
+    .el-picker-panel {
+        background: rgba(255, 255, 255, 0.08) !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        box-shadow: 0 16px 64px rgba(0, 0, 0, 0.4) !important;
+        border-radius: 16px !important;
+        color: rgba(255, 255, 255, 0.9) !important;
+    }
+
+    // Message notifications
+    .el-message {
+        background: rgba(255, 255, 255, 0.08) !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+        color: rgba(255, 255, 255, 0.95) !important;
+        
+        .el-message__content {
+            color: rgba(255, 255, 255, 0.95) !important;
+        }
+        
+        .el-message__icon {
+            color: rgba(255, 255, 255, 0.9) !important;
+        }
+    }
+}
+
+// Light theme dropdowns and popovers
+html:not(.dark) .el-dropdown-menu,
+html:not(.dark) .el-select-dropdown,
+html:not(.dark) .el-popover,
+html:not(.dark) .el-picker-panel {
+    background: #ffffff !important;
+    border: 1px solid #e0e0e0 !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+    border-radius: 16px !important;
+    color: #333333 !important;
+}
+
+html:not(.dark) .el-message {
+    background: #ffffff !important;
+    border: 1px solid #e0e0e0 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+    color: #333333 !important;
+    
+    .el-message__content {
+        color: #333333 !important;
+    }
+    
+    .el-message__icon {
+        color: #666666 !important;
+    }
+}
+
+.dark {
+    // Additional message box input styling
+    .el-message-box__input {
+        .el-input__wrapper {
+            background: rgba(20, 22, 32, 0.8) !important;
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
+            color: rgba(255, 255, 255, 0.95) !important;
+            
+            .el-input__inner {
+                color: rgba(255, 255, 255, 0.95) !important;
+            }
+        }
+        
+        .el-input__wrapper.is-focus {
+            background: rgba(20, 22, 32, 0.9) !important;
+            border-color: rgba(255, 255, 255, 0.2) !important;
+        }
+    }
+
+    .el-loading-mask {
+        background-color: rgba(0, 0, 0, 0.5) !important;
+    }
+
+    .el-textarea .el-input__count,
+    .el-input .el-input__count .el-input__count-inner {
+        background-color: rgba(20, 22, 32, 0.7);
+    }
+
+    .x-friend-item .el-textarea .el-input__count {
+        background-color: rgba(20, 22, 32, 0.7);
+    }
+
+    .x-friend-item:hover .el-input__count {
+        background: rgba(255, 255, 255, 0.22);
+    }
+
+    .el-input-group__append,
+    .el-input-group__prepend {
+        color: rgba(255, 255, 255, 0.95);
+        background-color: rgba(20, 22, 32, 0.6);
+        border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .el-input-number__decrease,
+    .el-input-number__increase {
+        background: rgba(20, 22, 32, 0.6);
+        color: rgba(255, 255, 255, 0.95);
+    }
+
+    .el-input-number__decrease {
+        border-right: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    .el-input-number__increase {
+        border-left: 1px solid rgba(255, 255, 255, 0.25);
+    }
+}
+
+// Light theme message box input
+html:not(.dark) .el-message-box__input {
+    .el-input__wrapper {
+        background: #ffffff !important;
+        border: 1px solid #e0e0e0 !important;
+        color: #333333 !important;
+        
+        .el-input__inner {
+            color: #333333 !important;
+        }
+    }
+    
+    .el-input__wrapper.is-focus {
+        background: #ffffff !important;
+        border-color: #409eff !important;
+    }
+}
+
+html:not(.dark) .el-loading-mask {
+    background-color: rgba(255, 255, 255, 0.8) !important;
+}
+
+html:not(.dark) .el-textarea .el-input__count,
+html:not(.dark) .el-input .el-input__count .el-input__count-inner {
+    background-color: #f5f5f5;
+}
+
+html:not(.dark) .x-friend-item .el-textarea .el-input__count {
+    background-color: #f5f5f5;
+}
+
+html:not(.dark) .x-friend-item:hover .el-input__count {
+    background: #e8e8e8;
+}
+
+html:not(.dark) .el-input-group__append,
+html:not(.dark) .el-input-group__prepend {
+    color: #333333;
+    background-color: #f5f5f5;
+    border-color: #e0e0e0;
+}
+
+html:not(.dark) .el-input-number__decrease,
+html:not(.dark) .el-input-number__increase {
+    background: #f5f5f5;
+    color: #333333;
+}
+
+html:not(.dark) .el-input-number__decrease {
+    border-right: 1px solid #e0e0e0;
+}
+
+html:not(.dark) .el-input-number__increase {
+    border-left: 1px solid #e0e0e0;
+}
+
+.dark {
+
+    // Tables
+    .el-table {
+        background: transparent !important;
+        color: rgba(255, 255, 255, 0.9) !important;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .el-table tr,
+    .el-table td.el-table__cell,
+    .el-table th.el-table__cell {
+        background-color: rgba(255, 255, 255, 0.02) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+        color: rgba(255, 255, 255, 0.85) !important;
+    }
+
+    .el-table th.el-table__cell {
+        background: rgba(255, 255, 255, 0.04) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+        color: rgba(255, 255, 255, 0.9) !important;
+        font-weight: 600 !important;
+        font-size: 12px !important;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 14px 12px !important;
+    }
+
+    .el-table td.el-table__cell {
+        padding: 12px !important;
+        font-size: 13px;
+    }
+
+    .el-table--border::after,
+    .el-table--group::after,
+    .el-table::before {
+        background-color: rgba(255, 255, 255, 0.05) !important;
+    }
+
+    .el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell {
+        background-color: rgba(255, 255, 255, 0.03) !important;
+    }
+
+    .el-table--enable-row-hover .el-table__body tr:hover > td.el-table__cell {
+        background-color: rgba(255, 255, 255, 0.06) !important;
+    }
+
+    .el-table__expanded-cell:hover {
+        background-color: rgba(255, 255, 255, 0.04) !important;
+    }
+
+    .el-table__body tr {
+        transition: background-color 0.2s ease;
+    }
+
+    .el-table__body tr:hover {
+        transition: background-color 0.2s ease;
+    }
+
+    // Table sort icons
+    .el-table__sort-caret {
+        border-color: rgba(255, 255, 255, 0.3) !important;
+    }
+
+    .el-table th.el-table__cell.is-sortable {
+        cursor: pointer;
+        user-select: none;
+        
+        &:hover {
+            background: rgba(255, 255, 255, 0.06) !important;
+        }
+    }
+
+    .el-table th.el-table__cell.ascending .el-table__sort-caret.ascending,
+    .el-table th.el-table__cell.descending .el-table__sort-caret.descending {
+        border-color: rgba(255, 255, 255, 0.7) !important;
+    }
+
+    // Table selection checkbox
+    .el-table .el-checkbox {
+        .el-checkbox__inner {
+            background-color: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.15);
+            
+            &:hover {
+                border-color: rgba(255, 255, 255, 0.25);
+            }
+        }
+        
+        &.is-checked .el-checkbox__inner {
+            background-color: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+    }
+
+    // Table loading overlay
+    .el-loading-mask {
+        background-color: rgba(0, 0, 0, 0.3) !important;
+    }
+
+    .el-loading-spinner {
+        .path {
+            stroke: rgba(255, 255, 255, 0.6);
+        }
+    }
+}
+
+// Light theme tables
+html:not(.dark) .el-table {
+    background: transparent !important;
+    color: #333333 !important;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+html:not(.dark) .el-table tr,
+html:not(.dark) .el-table td.el-table__cell,
+html:not(.dark) .el-table th.el-table__cell {
+    background-color: #ffffff !important;
+    border-bottom: 1px solid #e0e0e0 !important;
+    color: #333333 !important;
+}
+
+html:not(.dark) .el-table th.el-table__cell {
+    background: #f5f5f5 !important;
+    border-bottom: 1px solid #d0d0d0 !important;
+    color: #333333 !important;
+    font-weight: 600 !important;
+    font-size: 12px !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 14px 12px !important;
+}
+
+html:not(.dark) .el-table td.el-table__cell {
+    padding: 12px !important;
+    font-size: 13px;
+    color: #333333 !important;
+    
+    // Ensure all nested text elements are dark
+    * {
+        color: #333333 !important;
+    }
+    
+    // Specific text elements
+    p, span, div:not(.el-button):not(.el-input):not(.el-select):not(.el-tag):not(.el-badge) {
+        color: #333333 !important;
+    }
+    
+    // Links in table cells
+    a {
+        color: #409eff !important;
+        
+        &:hover {
+            color: #66b1ff !important;
+        }
+    }
+    
+    // Labels in table cells
+    label {
+        color: #333333 !important;
+    }
+    
+    // Icons in table cells
+    .el-icon,
+    i,
+    [class*="el-icon"],
+    [class*="ri-"] {
+        color: #333333 !important;
+    }
+}
+
+html:not(.dark) .el-table th.el-table__cell {
+    // Ensure all nested text elements in headers are dark
+    * {
+        color: #333333 !important;
+    }
+    
+    // Specific text elements in headers
+    p, span, div:not(.el-button):not(.el-input):not(.el-select) {
+        color: #333333 !important;
+    }
+    
+    // Icons in table headers
+    .el-icon,
+    i,
+    [class*="el-icon"],
+    [class*="ri-"] {
+        color: #333333 !important;
+    }
+}
+
+html:not(.dark) .el-table .cell {
+    color: #333333 !important;
+    
+    * {
+        color: #333333 !important;
+    }
+    
+    p, span, div:not(.el-button):not(.el-input):not(.el-select):not(.el-tag):not(.el-badge) {
+        color: #333333 !important;
+    }
+}
+
+html:not(.dark) .el-table__expanded-cell {
+    color: #333333 !important;
+    
+    * {
+        color: #333333 !important;
+    }
+    
+    p, span, div:not(.el-button):not(.el-input):not(.el-select) {
+        color: #333333 !important;
+    }
+}
+
+html:not(.dark) .el-table--border::after,
+html:not(.dark) .el-table--group::after,
+html:not(.dark) .el-table::before {
+    background-color: #e0e0e0 !important;
+}
+
+html:not(.dark) .el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell {
+    background-color: #fafafa !important;
+}
+
+html:not(.dark) .el-table--enable-row-hover .el-table__body tr:hover > td.el-table__cell {
+    background-color: #f0f0f0 !important;
+}
+
+html:not(.dark) .el-table__expanded-cell:hover {
+    background-color: #f5f5f5 !important;
+}
+
+html:not(.dark) .el-table__sort-caret {
+    border-color: #999999 !important;
+}
+
+html:not(.dark) .el-table th.el-table__cell.is-sortable:hover {
+    background: #f0f0f0 !important;
+}
+
+html:not(.dark) .el-table th.el-table__cell.ascending .el-table__sort-caret.ascending,
+html:not(.dark) .el-table th.el-table__cell.descending .el-table__sort-caret.descending {
+    border-color: #333333 !important;
+}
+
+html:not(.dark) .el-table .el-checkbox .el-checkbox__inner {
+    background-color: #ffffff;
+    border-color: #d0d0d0;
+}
+
+html:not(.dark) .el-table .el-checkbox .el-checkbox__inner:hover {
+    border-color: #b0b0b0;
+}
+
+html:not(.dark) .el-table .el-checkbox.is-checked .el-checkbox__inner {
+    background-color: #409eff;
+    border-color: #409eff;
+}
+
+html:not(.dark) .el-loading-spinner .path {
+    stroke: #409eff;
+}
+
+.dark {
+
+    // Friend view styling
+    .friend-view {
+        color: rgba(255, 255, 255, 0.85);
+
+        .friend-view__toolbar,
+        .friend-view__loading-text,
+        .friend-view__slider-label,
+        .friend-view__settings-label {
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .friend-view__search :deep(.el-input__wrapper) {
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+        }
+
+        .friend-view__instances {
+            background: none;
+        }
+
+        .friend-view__instance {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            box-sizing: border-box;
+        }
+
+        .friend-view__instance-header,
+        .friend-view__divider {
+            color: rgba(255, 255, 255, 0.95);
+        }
+
+        .friend-view__instance-count {
+            color: rgba(255, 255, 255, 0.65);
+        }
+
+        .friend-view__divider::before,
+        .friend-view__divider::after {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .friend-view__empty {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .friend-view__loading {
+            color: rgba(255, 255, 255, 0.85);
+        }
+    }
+
+    .friend-view .friend-card {
+        background: rgba(255, 255, 255, 0.15) !important;
+        border: 1px solid rgba(255, 255, 255, 0.25) !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        border-radius: 16px;
+
+        &:hover {
+            background: rgba(255, 255, 255, 0.18) !important;
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .friend-card__name {
+            color: rgba(255, 255, 255, 0.95);
+        }
+
+        .friend-card__signature {
+            color: rgba(255, 255, 255, 0.65);
+        }
+
+        .friend-card__world {
+            background: rgba(255, 255, 255, 0.18);
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .friend-card__location {
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .friend-card__status-dot {
+            border: 2px solid rgba(0, 0, 0, 0.3);
+        }
+
+        .friend-card__avatar {
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+    }
+}
+
+// Light theme friend view
+.friend-view {
+    color: #666666;
+
+    .friend-view__toolbar,
+    .friend-view__loading-text,
+    .friend-view__slider-label,
+    .friend-view__settings-label {
+        color: #666666;
+    }
+
+    .friend-view__search :deep(.el-input__wrapper) {
+        background: #ffffff;
+        box-shadow: inset 0 0 0 1px #e0e0e0;
+        border: 1px solid #e0e0e0;
+    }
+
+    .friend-view__instances {
+        background: none;
+    }
+
+    .friend-view__instance {
+        background: #ffffff;
+        border-radius: 12px;
+        border: 1px solid #e0e0e0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        box-sizing: border-box;
+    }
+
+    .friend-view__instance-header,
+    .friend-view__divider {
+        color: #333333;
+    }
+
+    .friend-view__instance-count {
+        color: #999999;
+    }
+
+    .friend-view__divider::before,
+    .friend-view__divider::after {
+        background: #e0e0e0;
+    }
+
+    .friend-view__empty {
+        color: #b3b3b3;
+    }
+
+    .friend-view__loading {
+        color: #666666;
+    }
+}
+
+html:not(.dark) .friend-view .friend-card {
+    background: #ffffff !important;
+    border: 1px solid #e0e0e0 !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    border-radius: 16px;
+
+    &:hover {
+        background: #f0f0f0 !important;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+    }
+
+    .friend-card__name {
+        color: #333333;
+    }
+
+    .friend-card__signature {
+        color: #999999;
+    }
+
+    .friend-card__world {
+        background: #f0f0f0;
+        color: #666666;
+    }
+
+    .friend-card__location {
+        color: #666666;
+    }
+
+    .friend-card__status-dot {
+        border: 2px solid rgba(255, 255, 255, 0.8);
+    }
+
+    .friend-card__avatar {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    }
+}
+
+.dark {
+    // Pagination
+    .el-pagination {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 12px 0;
+    }
+
+    .el-pagination .btn-next,
+    .el-pagination .btn-prev {
+        color: rgba(255, 255, 255, 0.7) !important;
+        background: rgba(255, 255, 255, 0.04) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 8px !important;
+        padding: 6px 10px;
+        transition: all 0.3s ease;
+        font-size: 12px;
+        min-width: 32px;
+        height: 32px;
+    }
+
+    .el-pagination .btn-next:hover,
+    .el-pagination .btn-prev:hover {
+        background: rgba(255, 255, 255, 0.08) !important;
+        border-color: rgba(255, 255, 255, 0.15) !important;
+        color: rgba(255, 255, 255, 0.9) !important;
+    }
+
+    .el-pagination button:disabled {
+        color: rgba(255, 255, 255, 0.3) !important;
+        background: rgba(255, 255, 255, 0.02) !important;
+        border-color: rgba(255, 255, 255, 0.05) !important;
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+
+    .el-pagination__total {
+        color: rgba(255, 255, 255, 0.6) !important;
+        margin: 0 12px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .el-pager {
+        display: flex;
+        gap: 4px;
+    }
+
+    .el-pager li {
+        background: rgba(255, 255, 255, 0.04) !important;
+        color: rgba(255, 255, 255, 0.7) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 8px !important;
+        min-width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .el-pager li:hover {
+        background: rgba(255, 255, 255, 0.08) !important;
+        border-color: rgba(255, 255, 255, 0.15) !important;
+        color: rgba(255, 255, 255, 0.9) !important;
+    }
+
+    .el-pager li.is-active {
+        background: rgba(255, 255, 255, 0.12) !important;
+        border-color: rgba(255, 255, 255, 0.2) !important;
+        color: rgba(255, 255, 255, 1) !important;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    }
+
+    .el-pagination__sizes {
+        .el-select {
+            .el-input__wrapper {
+                background: rgba(255, 255, 255, 0.04) !important;
+                border: 1px solid rgba(255, 255, 255, 0.08) !important;
+                border-radius: 8px !important;
+                height: 32px;
+                
+                &:hover {
+                    background: rgba(255, 255, 255, 0.06) !important;
+                    border-color: rgba(255, 255, 255, 0.12) !important;
+                }
+                
+                &.is-focus {
+                    background: rgba(255, 255, 255, 0.08) !important;
+                    border-color: rgba(255, 255, 255, 0.15) !important;
+                }
+            }
+            
+            .el-input__inner {
+                color: rgba(255, 255, 255, 0.8) !important;
+                font-size: 12px;
+            }
+        }
+    }
+}
+
+// Light theme pagination
+html:not(.dark) .el-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 12px 0;
+}
+
+html:not(.dark) .el-pagination .btn-next,
+html:not(.dark) .el-pagination .btn-prev {
+    color: #666666 !important;
+    background: #ffffff !important;
+    border: 1px solid #e0e0e0 !important;
+    border-radius: 8px !important;
+    padding: 6px 10px;
+    transition: all 0.3s ease;
+    font-size: 12px;
+    min-width: 32px;
+    height: 32px;
+}
+
+html:not(.dark) .el-pagination .btn-next:hover,
+html:not(.dark) .el-pagination .btn-prev:hover {
+    background: #f0f0f0 !important;
+    border-color: #d0d0d0 !important;
+    color: #333333 !important;
+}
+
+html:not(.dark) .el-pagination button:disabled {
+    color: #b3b3b3 !important;
+    background: #f5f5f5 !important;
+    border-color: #e0e0e0 !important;
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+html:not(.dark) .el-pagination__total {
+    color: #999999 !important;
+    margin: 0 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+html:not(.dark) .el-pager {
+    display: flex;
+    gap: 4px;
+}
+
+html:not(.dark) .el-pager li {
+    background: #ffffff !important;
+    color: #666666 !important;
+    border: 1px solid #e0e0e0 !important;
+    border-radius: 8px !important;
+    min-width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+html:not(.dark) .el-pager li:hover {
+    background: #f0f0f0 !important;
+    border-color: #d0d0d0 !important;
+    color: #333333 !important;
+}
+
+html:not(.dark) .el-pager li.is-active {
+    background: #409eff !important;
+    border-color: #409eff !important;
+    color: #ffffff !important;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3);
+}
+
+html:not(.dark) .el-pagination__sizes .el-select .el-input__wrapper {
+    background: #ffffff !important;
+    border: 1px solid #e0e0e0 !important;
+    border-radius: 8px !important;
+    height: 32px;
+}
+
+html:not(.dark) .el-pagination__sizes .el-select .el-input__wrapper:hover {
+    background: #f5f5f5 !important;
+    border-color: #d0d0d0 !important;
+}
+
+html:not(.dark) .el-pagination__sizes .el-select .el-input__wrapper.is-focus {
+    background: #ffffff !important;
+    border-color: #409eff !important;
+}
+
+html:not(.dark) .el-pagination__sizes .el-select .el-input__inner {
+    color: #333333 !important;
+    font-size: 12px;
+}
+
+.dark {
+
+    div.x-friend-list
+        > div:nth-child(1)
+        > div
+        > div.el-textarea.el-input--small
+        > span.el-input__count {
+        background-color: rgba(255, 255, 255, 0.18);
+    }
+
+    // Tags
+    .el-tag {
+        background-color: rgba(20, 22, 32, 0.7);
+        border-color: rgba(255, 255, 255, 0.25);
+        color: rgba(255, 255, 255, 0.9);
+        border-radius: 8px;
+    }
+
+    .el-tag--plain.el-tag--info {
+        background-color: rgba(20, 22, 32, 0.7);
+    }
+
+    .el-tag.el-tag--success {
+        background-color: rgba(20, 22, 32, 0.7);
+        border-color: rgba(255, 255, 255, 0.25);
+        color: rgba(100, 200, 100, 0.8);
+    }
+
+    .el-tag.el-tag--info {
+        background-color: rgba(20, 22, 32, 0.7);
+        border-color: rgba(255, 255, 255, 0.25);
+        color: rgba(255, 255, 255, 0.85);
+    }
+
+    .el-tag.el-tag--warning {
+        background-color: rgba(20, 22, 32, 0.7);
+        border-color: rgba(255, 255, 255, 0.25);
+        color: rgba(255, 200, 100, 0.8);
+    }
+
+    .el-tag.el-tag--danger {
+        background-color: rgba(20, 22, 32, 0.7);
+        border-color: rgba(255, 255, 255, 0.25);
+        color: rgba(255, 100, 100, 0.8);
+    }
+
+    .el-collapse-item .el-tag--small {
+        background-color: rgba(20, 22, 32, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    // Buttons
+    .el-button {
+        color: rgba(255, 255, 255, 0.85);
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+
+    // Override Element Plus default blue primary buttons
+    .el-button--primary {
+        background: rgba(255, 255, 255, 0.12) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        color: rgba(255, 255, 255, 0.95) !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+    }
+
+    .el-button--primary:hover,
+    .el-button--primary:focus {
+        background: rgba(255, 255, 255, 0.18) !important;
+        border-color: rgba(255, 255, 255, 0.3) !important;
+        color: rgba(255, 255, 255, 1) !important;
+        box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5) !important;
+    }
+
+    .el-button:not(.el-button--text, .el-button--primary, .is-disabled) {
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    .el-button:not(.el-button--text, .el-button--primary, .is-disabled):focus,
+    .el-button:not(.el-button--text, .el-button--primary, .is-disabled):hover {
+        color: rgba(255, 255, 255, 0.95) !important;
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(255, 255, 255, 0.25);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .el-button.is-disabled,
+    .el-button.is-disabled:focus,
+    .el-button.is-disabled:hover {
+        color: rgba(255, 255, 255, 0.4);
+        background: rgba(255, 255, 255, 0.04);
+        border-color: rgba(255, 255, 255, 0.1);
+        opacity: 0.5;
+    }
+
+    // Tabs
+    .el-tabs__active-bar {
+        background-color: rgba(255, 255, 255, 0.3) !important;
+    }
+
+    .el-tabs--card > .el-tabs__header {
+        border-bottom-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .el-tabs--card > .el-tabs__header .el-tabs__item {
+        background: rgba(255, 255, 255, 0.15);
+        border-left-color: rgba(255, 255, 255, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        border-radius: 8px 8px 0 0;
+    }
+
+    .el-tabs--card > .el-tabs__header .el-tabs__item.is-active {
+        background: rgba(255, 255, 255, 0.18);
+        border-bottom-color: transparent;
+        border-left-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .el-tabs--card > .el-tabs__header .el-tabs__nav {
+        border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    // Dropdown menus
+    .el-dropdown-menu {
+        background: rgba(255, 255, 255, 0.15) !important;
+        border-color: rgba(255, 255, 255, 0.25);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .el-dropdown-menu__item--divided::before {
+        background-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .el-dropdown-menu__item {
+        color: rgba(255, 255, 255, 0.85);
+        border-radius: 8px;
+        margin: 2px 4px;
+    }
+
+    .el-dropdown-menu__item:focus,
+    .el-dropdown-menu__item:not(.is-disabled):hover {
+        color: rgba(255, 255, 255, 0.9);
+        background-color: rgba(255, 255, 255, 0.18);
+    }
+
+    .el-popper[data-popper-placement^='bottom'] .el-popper__arrow::after {
+        border-bottom-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .el-popper[data-popper-placement^='bottom'] .el-popper__arrow {
+        border-bottom-color: rgba(255, 255, 255, 0.25);
+    }
+
+    // Form items
+    .el-form-item {
+        margin-bottom: 4px;
+    }
+}
+
+// Light theme tags
+html:not(.dark) .el-tag {
+    background-color: #f0f0f0;
+    border-color: #e0e0e0;
+    color: #333333;
+    border-radius: 8px;
+}
+
+html:not(.dark) .el-tag--plain.el-tag--info {
+    background-color: #f0f0f0;
+}
+
+html:not(.dark) .el-tag.el-tag--success {
+    background-color: #f0f0f0;
+    border-color: #e0e0e0;
+    color: #67c23a;
+}
+
+html:not(.dark) .el-tag.el-tag--info {
+    background-color: #f0f0f0;
+    border-color: #e0e0e0;
+    color: #666666;
+}
+
+html:not(.dark) .el-tag.el-tag--warning {
+    background-color: #f0f0f0;
+    border-color: #e0e0e0;
+    color: #e6a23c;
+}
+
+html:not(.dark) .el-tag.el-tag--danger {
+    background-color: #f0f0f0;
+    border-color: #e0e0e0;
+    color: #f56c6c;
+}
+
+html:not(.dark) .el-collapse-item .el-tag--small {
+    background-color: #f0f0f0;
+    border: 1px solid #e0e0e0;
+}
+
+// Light theme buttons
+html:not(.dark) .el-button {
+    color: #333333;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+html:not(.dark) .el-button--primary {
+    background: #409eff !important;
+    border: 1px solid #409eff !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3) !important;
+}
+
+html:not(.dark) .el-button--primary:hover,
+html:not(.dark) .el-button--primary:focus {
+    background: #66b1ff !important;
+    border-color: #66b1ff !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 16px rgba(64, 158, 255, 0.4) !important;
+}
+
+html:not(.dark) .el-button:not(.el-button--text, .el-button--primary, .is-disabled) {
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+}
+
+html:not(.dark) .el-button:not(.el-button--text, .el-button--primary, .is-disabled):focus,
+html:not(.dark) .el-button:not(.el-button--text, .el-button--primary, .is-disabled):hover {
+    color: #333333 !important;
+    background: #f0f0f0;
+    border-color: #d0d0d0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+html:not(.dark) .el-button.is-disabled,
+html:not(.dark) .el-button.is-disabled:focus,
+html:not(.dark) .el-button.is-disabled:hover {
+    color: #b3b3b3;
+    background: #f5f5f5;
+    border-color: #e0e0e0;
+    opacity: 0.5;
+}
+
+// Light theme tabs
+html:not(.dark) .el-tabs__active-bar {
+    background-color: #409eff !important;
+}
+
+html:not(.dark) .el-tabs--card > .el-tabs__header {
+    border-bottom-color: #e0e0e0;
+}
+
+html:not(.dark) .el-tabs--card > .el-tabs__header .el-tabs__item {
+    background: #ffffff;
+    border-left-color: #e0e0e0;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px 8px 0 0;
+}
+
+html:not(.dark) .el-tabs--card > .el-tabs__header .el-tabs__item.is-active {
+    background: #f5f5f5;
+    border-bottom-color: transparent;
+    border-left-color: #e0e0e0;
+}
+
+html:not(.dark) .el-tabs--card > .el-tabs__header .el-tabs__nav {
+    border-color: #e0e0e0;
+}
+
+// Light theme dropdown menus
+html:not(.dark) .el-dropdown-menu {
+    background: #ffffff !important;
+    border-color: #e0e0e0;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+html:not(.dark) .el-dropdown-menu__item--divided::before {
+    background-color: #e0e0e0;
+}
+
+html:not(.dark) .el-dropdown-menu__item {
+    color: #666666;
+    border-radius: 8px;
+    margin: 2px 4px;
+}
+
+html:not(.dark) .el-dropdown-menu__item:focus,
+html:not(.dark) .el-dropdown-menu__item:not(.is-disabled):hover {
+    color: #333333;
+    background-color: #f0f0f0;
+}
+
+html:not(.dark) .el-popper[data-popper-placement^='bottom'] .el-popper__arrow::after {
+    border-bottom-color: #ffffff;
+}
+
+html:not(.dark) .el-popper[data-popper-placement^='bottom'] .el-popper__arrow {
+    border-bottom-color: #e0e0e0;
+}
+
+// Light theme form items
+html:not(.dark) .el-form-item {
+    margin-bottom: 4px;
+}
+
+.dark {
+    // Tree
+    .el-tree {
+        background: transparent;
+    }
+
+    .el-tree-node:focus > .el-tree-node__content {
+        background-color: rgba(20, 22, 32, 0.6);
+        border-radius: 8px;
+    }
+
+    // Menu
+    .el-menu-item i {
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    .el-menu-item.notify::after {
+        background: rgba(255, 255, 255, 0.8);
+    }
+
+    .el-menu-item.is-active::before {
+        background: rgba(255, 255, 255, 0.6);
+    }
+
+    .el-menu-item:focus,
+    .el-menu-item:hover {
+        background-color: rgba(20, 22, 32, 0.7);
+        border-radius: 8px;
+    }
+
+    // Collapse
+    .el-collapse-item__header {
+        background-color: transparent;
+    }
+
+    .el-collapse-item__wrap {
+        background-color: rgba(20, 22, 32, 0.6);
+        border-radius: 8px;
+    }
+
+    // Switch
+    .el-switch__core {
+        background-color: rgba(20, 22, 32, 0.7);
+        border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .el-switch__label {
+        color: rgba(255, 255, 255, 0.85);
+    }
+
+    // Popover
+    .el-popover {
+        text-align: left;
+        word-break: break-word;
+        color: rgba(255, 255, 255, 0.85);
+        background: rgba(255, 255, 255, 0.15) !important;
+        border-color: rgba(255, 255, 255, 0.25);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .el-popper[data-popper-placement^='right'] .el-popper__arrow::after {
+        border-right-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .el-popper[data-popper-placement^='right'] .el-popper__arrow {
+        border-right-color: rgba(255, 255, 255, 0.25);
+    }
+
+    // Select dropdown
+    .el-select-dropdown__item {
+        color: rgba(255, 255, 255, 0.85);
+        border-radius: 8px;
+        margin: 2px 4px;
+    }
+
+    .el-select-dropdown.is-multiple .el-select-dropdown__item.selected {
+        background-color: rgba(255, 255, 255, 0.18);
+    }
+
+    .el-select-dropdown.is-multiple .el-select-dropdown__item.selected.hover {
+        background-color: rgba(255, 255, 255, 0.18);
+    }
+
+    .el-select-dropdown__item.hover,
+    .el-select-dropdown__item:hover {
+        background-color: rgba(255, 255, 255, 0.18);
+    }
+
+    // Radio buttons
+    .el-radio {
+        color: rgba(255, 255, 255, 0.95);
+    }
+
+    .el-radio-button__inner {
+        color: rgba(255, 255, 255, 0.95);
+        background: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        border-radius: 8px;
+    }
+
+    .el-radio-button:first-child .el-radio-button__inner {
+        border-left: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    .el-radio-button.is-disabled .el-radio-button__inner {
+        background-color: rgba(255, 255, 255, 0.12);
+        border-color: rgba(255, 255, 255, 0.25);
+        opacity: 0.5;
+    }
+
+    // Form labels and checkboxes
+    .el-form-item__label {
+        color: rgba(255, 255, 255, 0.85);
+    }
+
+    .el-checkbox {
+        color: rgba(255, 255, 255, 0.85);
+    }
+
+    // Inputs
+    .el-input.is-disabled .el-input__inner,
+    .el-input.is-disabled .el-input__wrapper {
+        background: rgba(255, 255, 255, 0.04);
+        opacity: 0.5;
+    }
+
+    .el-input__wrapper {
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        border-radius: 12px;
+    }
+
+    .el-input__wrapper:hover {
+        background: rgba(255, 255, 255, 0.12);
+        border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .el-input__wrapper.is-focus {
+        background: rgba(255, 255, 255, 0.12);
+        border-color: rgba(255, 255, 255, 0.25);
+        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+    }
+}
+
+// Light theme inputs
+html:not(.dark) .el-input.is-disabled .el-input__inner,
+html:not(.dark) .el-input.is-disabled .el-input__wrapper {
+    background: #f5f5f5;
+    opacity: 0.5;
+}
+
+html:not(.dark) .el-input__wrapper {
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+}
+
+html:not(.dark) .el-input__wrapper:hover {
+    background: #ffffff;
+    border-color: #d0d0d0;
+}
+
+html:not(.dark) .el-input__wrapper.is-focus {
+    background: #ffffff;
+    border-color: #409eff;
+    box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+}
+
+// Light theme tree
+html:not(.dark) .el-tree {
+    background: transparent;
+}
+
+html:not(.dark) .el-tree-node:focus > .el-tree-node__content {
+    background-color: #f0f0f0;
+    border-radius: 8px;
+}
+
+// Light theme menu
+html:not(.dark) .el-menu-item i {
+    color: #909399;
+}
+
+html:not(.dark) .el-menu-item.notify::after {
+    background: #409eff;
+}
+
+html:not(.dark) .el-menu-item.is-active::before {
+    background: #409eff;
+}
+
+html:not(.dark) .el-menu-item:focus,
+html:not(.dark) .el-menu-item:hover {
+    background-color: #f0f0f0;
+    border-radius: 8px;
+}
+
+// Light theme collapse
+html:not(.dark) .el-collapse-item__header {
+    background-color: transparent;
+}
+
+html:not(.dark) .el-collapse-item__wrap {
+    background-color: #f5f5f5;
+    border-radius: 8px;
+}
+
+// Light theme switch
+html:not(.dark) .el-switch__core {
+    background-color: #d0d0d0;
+    border-color: #d0d0d0;
+}
+
+html:not(.dark) .el-switch__label {
+    color: #666666;
+}
+
+// Light theme popover
+html:not(.dark) .el-popover {
+    text-align: left;
+    word-break: break-word;
+    color: #666666;
+    background: #ffffff !important;
+    border-color: #e0e0e0;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+html:not(.dark) .el-popper[data-popper-placement^='right'] .el-popper__arrow::after {
+    border-right-color: #ffffff;
+}
+
+html:not(.dark) .el-popper[data-popper-placement^='right'] .el-popper__arrow {
+    border-right-color: #e0e0e0;
+}
+
+// Light theme select dropdown
+html:not(.dark) .el-select-dropdown__item {
+    color: #666666;
+    border-radius: 8px;
+    margin: 2px 4px;
+}
+
+html:not(.dark) .el-select-dropdown.is-multiple .el-select-dropdown__item.selected {
+    background-color: #e6f7ff;
+}
+
+html:not(.dark) .el-select-dropdown.is-multiple .el-select-dropdown__item.selected.hover {
+    background-color: #e6f7ff;
+}
+
+html:not(.dark) .el-select-dropdown__item.hover,
+html:not(.dark) .el-select-dropdown__item:hover {
+    background-color: #f0f0f0;
+}
+
+// Light theme radio buttons
+html:not(.dark) .el-radio {
+    color: #333333;
+}
+
+html:not(.dark) .el-radio-button__inner {
+    color: #333333;
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+}
+
+html:not(.dark) .el-radio-button:first-child .el-radio-button__inner {
+    border-left: 1px solid #e0e0e0;
+}
+
+html:not(.dark) .el-radio-button.is-disabled .el-radio-button__inner {
+    background-color: #f5f5f5;
+    border-color: #e0e0e0;
+    opacity: 0.5;
+}
+
+// Light theme form labels and checkboxes
+html:not(.dark) .el-form-item__label {
+    color: #666666;
+}
+
+html:not(.dark) .el-checkbox {
+    color: #666666;
+}
+
+.dark {
+    // Main app containers
+    .x-app {
+        background: #000000 !important;
+        background-attachment: fixed;
+    }
+
+    .x-container {
+        // Styling handled in app.scss
+    }
+
+    .x-app > .x-container {
+        overflow: hidden auto !important;
+    }
+
+    .x-login-container {
+        background: #000000 !important;
+        background-attachment: fixed;
+    }
+
+    .x-aside-container {
+        // Styling handled in app.scss
+    }
+
+    .x-friend-list {
+        overflow: hidden auto !important;
+    }
+
+    .x-friend-list > .x-friend-group {
+        color: rgba(255, 255, 255, 0.95);
+    }
+
+    .x-friend-item:hover,
+    .x-change-image-item:hover {
+        background: rgba(255, 255, 255, 0.18);
+        border-radius: 8px;
+    }
+
+    .x-friend-item > .detail > .name {
+        color: rgba(255, 255, 255, 0.95);
+    }
+
+    .x-friend-item > .detail > .extra,
+    .extra {
+        color: rgba(255, 255, 255, 0.65);
+    }
+
+    .x-login-container p {
+        color: rgba(255, 255, 255, 0.85);
+    }
+
+    .x-menu-container {
+        // Styling handled in app.scss
+        overflow: hidden auto !important;
+    }
+
+    .x-grey {
+        color: rgba(255, 255, 255, 0.65);
+    }
+
+    // Color picker
+    .el-color-picker__panel {
+        background-color: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    // Text styles
+    .x-text-removed {
+        text-decoration: line-through;
+        color: rgba(255, 100, 100, 0.8);
+        background-color: rgba(255, 100, 100, 0.2);
+        padding: 2px 4px;
+        border-radius: 8px;
+    }
+
+    .x-text-added {
+        color: rgba(100, 200, 100, 0.8);
+        background-color: rgba(100, 200, 100, 0.2);
+        padding: 2px 4px;
+        border-radius: 8px;
+    }
+
+    // Divider
+    .el-divider {
+        background-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .el-divider__text {
+        background: rgba(255, 255, 255, 0.15);
+        color: rgba(255, 255, 255, 0.95);
+        border-radius: 8px;
+        padding: 0 12px;
+    }
+
+    .el-tabs__content {
+        overflow-y: auto !important;
+    }
+
+    // Date picker
+    .el-date-picker {
+        background-color: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .el-date-table td.disabled div {
+        background-color: rgba(255, 255, 255, 0.12);
+        color: rgba(255, 255, 255, 0.4);
+    }
+
+    .el-date-table td.next-month,
+    .el-date-table td.prev-month {
+        color: rgba(255, 255, 255, 0.4);
+    }
+
+    .el-date-table th {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    .el-picker-panel {
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .el-year-table td.disabled .cell {
+        background-color: rgba(255, 255, 255, 0.12);
+        opacity: 0.5;
+    }
+
+    .el-month-table td.disabled .cell {
+        background-color: rgba(255, 255, 255, 0.12);
+        opacity: 0.5;
+    }
+
+    .el-color-picker__trigger {
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        border-radius: 8px;
+    }
+
+    .el-tooltip__popper {
+        background: rgba(255, 255, 255, 0.15) !important;
+        border: 1px solid rgba(255, 255, 255, 0.25) !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+        border-radius: 8px !important;
+    }
+}
+
+// Light theme app containers
+html:not(.dark) .x-app,
+html:not(.dark) .x-login-container {
+    background: #ffffff !important;
+    background-attachment: fixed;
+}
+
+html:not(.dark) .x-friend-list > .x-friend-group {
+    color: #333333;
+}
+
+html:not(.dark) .x-friend-item:hover,
+html:not(.dark) .x-change-image-item:hover {
+    background: #f0f0f0;
+    border-radius: 8px;
+}
+
+html:not(.dark) .x-friend-item > .detail > .name {
+    color: #333333;
+}
+
+html:not(.dark) .x-friend-item > .detail > .extra,
+html:not(.dark) .extra {
+    color: #999999;
+}
+
+html:not(.dark) .x-login-container p {
+    color: #666666;
+}
+
+html:not(.dark) .x-grey {
+    color: #999999;
+}
+
+// Light theme cards
+html:not(.dark) .el-card {
+    background: #ffffff !important;
+    border: 1px solid #e0e0e0 !important;
+    color: #333333 !important;
+    
+    // Force all text to be dark unless it's a button, input, or special element
+    *:not(.el-button):not(.el-input):not(.el-select):not(.el-textarea):not(.el-checkbox):not(.el-radio):not(.el-icon):not([class*="ri-"]):not(svg):not(.el-tag):not(.el-badge__content) {
+        color: #333333 !important;
+    }
+    
+    .el-card__header {
+        color: #333333 !important;
+        border-bottom: 1px solid #e0e0e0 !important;
+        background: #f5f5f5 !important;
+        
+        // All text in header
+        *:not(.el-button):not(.el-input):not(.el-select):not(.el-icon):not([class*="ri-"]):not(svg) {
+            color: #333333 !important;
+        }
+        
+        // Headings in header
+        h1, h2, h3, h4, h5, h6 {
+            color: #333333 !important;
+        }
+        
+        // Labels in header
+        label {
+            color: #333333 !important;
+        }
+    }
+    
+    .el-card__body {
+        color: #333333 !important;
+        background: #ffffff !important;
+        
+        // All text in body
+        *:not(.el-button):not(.el-input):not(.el-select):not(.el-textarea):not(.el-checkbox):not(.el-radio):not(.el-icon):not([class*="ri-"]):not(svg):not(.el-tag):not(.el-badge__content) {
+            color: #333333 !important;
+        }
+        
+        // Headings in body
+        h1, h2, h3, h4, h5, h6 {
+            color: #333333 !important;
+        }
+        
+        // Secondary text
+        p, span:not(.el-tag):not(.el-badge__content), div:not(.el-button):not(.el-input):not(.el-select):not(.el-tag):not(.el-badge) {
+            color: #666666 !important;
+        }
+        
+        // Labels in body
+        label, .el-form-item__label {
+            color: #333333 !important;
+        }
+        
+        // Links in body
+        a {
+            color: #409eff !important;
+            
+            &:hover {
+                color: #66b1ff !important;
+            }
+        }
+        
+        // Lists in body
+        ul, ol, li {
+            color: #333333 !important;
+        }
+        
+        // Table in body
+        .el-table {
+            color: #333333 !important;
+            
+            th, td {
+                color: #333333 !important;
+            }
+        }
+    }
+    
+    .el-card__footer {
+        color: #333333 !important;
+        border-top: 1px solid #e0e0e0 !important;
+        background: #f5f5f5 !important;
+        
+        // All text in footer
+        *:not(.el-button):not(.el-input):not(.el-select):not(.el-icon):not([class*="ri-"]):not(svg) {
+            color: #333333 !important;
+        }
+        
+        // Headings in footer
+        h1, h2, h3, h4, h5, h6 {
+            color: #333333 !important;
+        }
+        
+        // Labels in footer
+        label {
+            color: #333333 !important;
+        }
+    }
+    
+    // Ensure headings are dark
+    h1, h2, h3, h4, h5, h6 {
+        color: #333333 !important;
+    }
+    
+    // Ensure buttons maintain their colors
+    .el-button {
+        color: inherit !important;
+    }
+    
+    .el-button--primary {
+        color: #ffffff !important;
+    }
+    
+    // Ensure links are visible
+    a {
+        color: #409eff !important;
+        
+        &:hover {
+            color: #66b1ff !important;
+        }
+    }
+    
+    // Ensure labels are dark
+    label, .el-form-item__label {
+        color: #333333 !important;
+    }
+    
+    // Ensure lists are dark
+    ul, ol, li {
+        color: #333333 !important;
+    }
+}
+
+// Light theme icons - comprehensive coverage
+html:not(.dark) {
+    // All icon types - base styles
+    .el-icon,
+    i.el-icon,
+    [class*="el-icon"],
+    .ri-icon,
+    [class*="ri-"],
+    i[class*="ri-"],
+    svg.el-icon,
+    svg[class*="ri-"],
+    [class^="el-icon"],
+    [class*=" icon"] {
+        color: #333333 !important;
+    }
+    
+    // Element Plus icons in buttons
+    .el-button {
+        .el-icon,
+        i,
+        [class*="el-icon"],
+        [class*="ri-"] {
+            color: #666666 !important;
+        }
+        
+        // Primary buttons have white icons
+        &.el-button--primary {
+            .el-icon,
+            i,
+            [class*="el-icon"],
+            [class*="ri-"] {
+                color: #ffffff !important;
+            }
+        }
+        
+        // Success buttons
+        &.el-button--success {
+            .el-icon,
+            i,
+            [class*="el-icon"],
+            [class*="ri-"] {
+                color: #ffffff !important;
+            }
+        }
+        
+        // Warning buttons
+        &.el-button--warning {
+            .el-icon,
+            i,
+            [class*="el-icon"],
+            [class*="ri-"] {
+                color: #ffffff !important;
+            }
+        }
+        
+        // Danger buttons
+        &.el-button--danger {
+            .el-icon,
+            i,
+            [class*="el-icon"],
+            [class*="ri-"] {
+                color: #ffffff !important;
+            }
+        }
+    }
+    
+    // Input icons
+    .el-input__prefix,
+    .el-input__suffix {
+        .el-icon,
+        i,
+        [class*="el-icon"],
+        [class*="ri-"] {
+            color: #666666 !important;
+        }
+    }
+    
+    // Select icons
+    .el-select .el-input__suffix {
+        .el-icon,
+        i,
+        [class*="el-icon"] {
+            color: #666666 !important;
+        }
+    }
+    
+    // Message icons
+    .el-message {
+        .el-message__icon {
+            color: #666666 !important;
+        }
+        
+        &.el-message--success .el-message__icon {
+            color: #67c23a !important;
+        }
+        
+        &.el-message--warning .el-message__icon {
+            color: #e6a23c !important;
+        }
+        
+        &.el-message--error .el-message__icon {
+            color: #f56c6c !important;
+        }
+        
+        &.el-message--info .el-message__icon {
+            color: #909399 !important;
+        }
+    }
+    
+    // Notification icons
+    .el-notification {
+        .el-notification__icon {
+            color: #666666 !important;
+        }
+        
+        &.el-notification--success .el-notification__icon {
+            color: #67c23a !important;
+        }
+        
+        &.el-notification--warning .el-notification__icon {
+            color: #e6a23c !important;
+        }
+        
+        &.el-notification--error .el-notification__icon {
+            color: #f56c6c !important;
+        }
+        
+        &.el-notification--info .el-notification__icon {
+            color: #909399 !important;
+        }
+    }
+    
+    // Alert icons
+    .el-alert {
+        .el-alert__icon {
+            color: #666666 !important;
+        }
+    }
+    
+    // Menu icons
+    .el-menu-item {
+        i,
+        .el-icon,
+        [class*="el-icon"],
+        [class*="ri-"] {
+            color: #666666 !important;
+        }
+        
+        &.is-active {
+            i,
+            .el-icon,
+            [class*="el-icon"],
+            [class*="ri-"] {
+                color: #409eff !important;
+            }
+        }
+    }
+    
+    // Card icons
+    .el-card {
+        .el-icon,
+        i,
+        [class*="el-icon"],
+        [class*="ri-"],
+        svg {
+            color: #333333 !important;
+        }
+        
+        .el-card__header .el-icon,
+        .el-card__header i {
+            color: #333333 !important;
+        }
+    }
+    
+    // Dialog icons
+    .el-dialog {
+        .el-icon,
+        i,
+        [class*="el-icon"],
+        [class*="ri-"],
+        svg {
+            color: #333333 !important;
+        }
+        
+        .el-dialog__close {
+            color: #999999 !important;
+            
+            &:hover {
+                color: #333333 !important;
+            }
+        }
+        
+        .el-dialog__header .el-icon,
+        .el-dialog__header i {
+            color: #333333 !important;
+        }
+    }
+    
+    // Drawer icons
+    .el-drawer {
+        .el-icon,
+        i,
+        [class*="el-icon"],
+        [class*="ri-"] {
+            color: #333333 !important;
+        }
+        
+        .el-drawer__closeBtn {
+            color: #999999 !important;
+            
+            &:hover {
+                color: #333333 !important;
+            }
+        }
+    }
+    
+    // Popover icons
+    .el-popover {
+        .el-icon,
+        i,
+        [class*="el-icon"],
+        [class*="ri-"] {
+            color: #333333 !important;
+        }
+    }
+    
+    // Table icons
+    .el-table {
+        .el-icon,
+        i,
+        [class*="el-icon"],
+        [class*="ri-"] {
+            color: #333333 !important;
+        }
+        
+        .el-table__sort-caret {
+            border-top-color: #c0c4cc !important;
+            border-bottom-color: #c0c4cc !important;
+        }
+        
+        th.is-sortable:hover .el-table__sort-caret {
+            border-top-color: #909399 !important;
+            border-bottom-color: #909399 !important;
+        }
+        
+        th.ascending .el-table__sort-caret.ascending {
+            border-bottom-color: #409eff !important;
+        }
+        
+        th.descending .el-table__sort-caret.descending {
+            border-top-color: #409eff !important;
+        }
+    }
+    
+    // Form icons
+    .el-form-item {
+        .el-icon,
+        i,
+        [class*="el-icon"],
+        [class*="ri-"] {
+            color: #666666 !important;
+        }
+    }
+    
+    // Tabs icons
+    .el-tabs {
+        .el-icon,
+        i,
+        [class*="el-icon"],
+        [class*="ri-"] {
+            color: #666666 !important;
+        }
+        
+        .el-tabs__item.is-active {
+            .el-icon,
+            i,
+            [class*="el-icon"],
+            [class*="ri-"] {
+                color: #409eff !important;
+            }
+        }
+    }
+    
+    // Pagination icons
+    .el-pagination {
+        .el-icon,
+        i,
+        [class*="el-icon"] {
+            color: #666666 !important;
+        }
+        
+        button:disabled {
+            .el-icon,
+            i,
+            [class*="el-icon"] {
+                color: #b3b3b3 !important;
+            }
+        }
+    }
+    
+    // Tree icons
+    .el-tree {
+        .el-icon,
+        i,
+        [class*="el-icon"],
+        [class*="ri-"] {
+            color: #666666 !important;
+        }
+        
+        .el-tree-node__expand-icon {
+            color: #666666 !important;
+        }
+    }
+    
+    // Collapse icons
+    .el-collapse-item {
+        .el-icon,
+        i,
+        [class*="el-icon"],
+        [class*="ri-"] {
+            color: #666666 !important;
+        }
+        
+        .el-collapse-item__arrow {
+            color: #666666 !important;
+        }
+    }
+    
+    // Timeline icons
+    .el-timeline {
+        .el-icon,
+        i,
+        [class*="el-icon"],
+        [class*="ri-"] {
+            color: #666666 !important;
+        }
+    }
+    
+    // Steps icons
+    .el-steps {
+        .el-icon,
+        i,
+        [class*="el-icon"],
+        [class*="ri-"] {
+            color: #666666 !important;
+        }
+        
+        .el-step__icon {
+            color: #666666 !important;
+        }
+        
+        .el-step.is-process .el-step__icon {
+            color: #409eff !important;
+        }
+        
+        .el-step.is-finish .el-step__icon {
+            color: #67c23a !important;
+        }
+        
+        .el-step.is-success .el-step__icon {
+            color: #67c23a !important;
+        }
+    }
+    
+    // Breadcrumb icons
+    .el-breadcrumb {
+        .el-icon,
+        i,
+        [class*="el-icon"],
+        [class*="ri-"] {
+            color: #999999 !important;
+        }
+    }
+    
+    // Badge icons
+    .el-badge {
+        .el-icon,
+        i,
+        [class*="el-icon"],
+        [class*="ri-"] {
+            color: #333333 !important;
+        }
+    }
+    
+    // Empty state icons
+    .el-empty {
+        .el-icon,
+        i,
+        [class*="el-icon"],
+        [class*="ri-"],
+        svg {
+            color: #c0c4cc !important;
+        }
+    }
+    
+    // Result icons
+    .el-result {
+        .el-icon,
+        i,
+        [class*="el-icon"],
+        [class*="ri-"],
+        svg {
+            color: #909399 !important;
+        }
+        
+        &.el-result--success .el-result__icon {
+            color: #67c23a !important;
+        }
+        
+        &.el-result--warning .el-result__icon {
+            color: #e6a23c !important;
+        }
+        
+        &.el-result--error .el-result__icon {
+            color: #f56c6c !important;
+        }
+    }
+    
+    // Calendar icons
+    .el-calendar {
+        .el-icon,
+        i,
+        [class*="el-icon"],
+        [class*="ri-"] {
+            color: #333333 !important;
+        }
+    }
+    
+    // Descriptions icons
+    .el-descriptions {
+        .el-icon,
+        i,
+        [class*="el-icon"],
+        [class*="ri-"] {
+            color: #666666 !important;
+        }
+    }
+    
+    // Date picker icons
+    .el-date-picker,
+    .el-time-picker {
+        .el-icon,
+        i,
+        [class*="el-icon"],
+        [class*="ri-"] {
+            color: #666666 !important;
+        }
+    }
+    
+    // Color picker icons
+    .el-color-picker {
+        .el-icon,
+        i,
+        [class*="el-icon"],
+        [class*="ri-"] {
+            color: #666666 !important;
+        }
+    }
+    
+    // Rate icons
+    .el-rate {
+        .el-icon,
+        i,
+        [class*="el-icon"],
+        [class*="ri-"] {
+            color: #e0e0e0 !important;
+        }
+        
+        .el-rate__item.is-active {
+            .el-icon,
+            i,
+            [class*="el-icon"],
+            [class*="ri-"] {
+                color: #f7ba2a !important;
+            }
+        }
+    }
+    
+    // Switch icons (if any)
+    .el-switch {
+        .el-icon,
+        i,
+        [class*="el-icon"],
+        [class*="ri-"] {
+            color: #666666 !important;
+        }
+    }
+    
+    // Radio/Checkbox icons (if any)
+    .el-radio,
+    .el-checkbox {
+        .el-icon,
+        i,
+        [class*="el-icon"],
+        [class*="ri-"] {
+            color: #666666 !important;
+        }
+    }
+}
+
+// Light theme calendar
+html:not(.dark) .el-calendar__title {
+    color: #333333 !important;
+}
+
+// Light theme descriptions
+html:not(.dark) .el-descriptions__body {
+    color: #333333 !important;
+}
+
+// Light theme general text in cards and containers
+html:not(.dark) {
+    // Comprehensive text color overrides for all containers
+    .el-card,
+    .el-dialog,
+    .el-drawer,
+    .el-popover,
+    .el-message-box,
+    .el-notification,
+    .el-alert,
+    .el-result,
+    .el-empty {
+        color: #333333 !important;
+        
+        // Force all text to be dark unless it's a button, input, or special element
+        *:not(.el-button):not(.el-input):not(.el-select):not(.el-textarea):not(.el-checkbox):not(.el-radio):not(.el-icon):not([class*="ri-"]):not(svg) {
+            color: #333333 !important;
+        }
+        
+        // Ensure headings are dark
+        h1, h2, h3, h4, h5, h6 {
+            color: #333333 !important;
+        }
+        
+        // Ensure paragraphs and spans are dark
+        p, span:not(.el-tag):not(.el-badge__content) {
+            color: #666666 !important;
+        }
+        
+        // Ensure labels are dark
+        label, .el-form-item__label, .el-form-item__error {
+            color: #333333 !important;
+        }
+        
+        // Ensure help text and error messages are visible
+        .el-form-item__error {
+            color: #f56c6c !important;
+        }
+        
+        .el-form-item__tip {
+            color: #999999 !important;
+        }
+        
+        // Ensure links are visible
+        a {
+            color: #409eff !important;
+            
+            &:hover {
+                color: #66b1ff !important;
+            }
+        }
+        
+        // Ensure table text is dark
+        .el-table {
+            color: #333333 !important;
+            
+            th, td {
+                color: #333333 !important;
+            }
+            
+            .el-table__header-wrapper th {
+                color: #333333 !important;
+            }
+            
+            .el-table__body-wrapper td {
+                color: #333333 !important;
+            }
+        }
+        
+        // Ensure list text is dark
+        ul, ol, li {
+            color: #333333 !important;
+        }
+        
+        // Ensure description text is dark
+        .el-descriptions__label,
+        .el-descriptions__content {
+            color: #333333 !important;
+        }
+        
+        // Ensure divider text is dark
+        .el-divider__text {
+            color: #333333 !important;
+            background: #ffffff !important;
+        }
+        
+        // Ensure step text is dark
+        .el-steps {
+            .el-step__title {
+                color: #333333 !important;
+            }
+            
+            .el-step__description {
+                color: #666666 !important;
+            }
+        }
+        
+        // Ensure breadcrumb text is dark
+        .el-breadcrumb {
+            .el-breadcrumb__inner {
+                color: #333333 !important;
+            }
+            
+            .el-breadcrumb__separator {
+                color: #999999 !important;
+            }
+        }
+    }
+    
+    // Drawer specific
+    .el-drawer {
+        background: #ffffff !important;
+        color: #333333 !important;
+        
+        .el-drawer__header {
+            color: #333333 !important;
+            border-bottom: 1px solid #e0e0e0 !important;
+            
+            * {
+                color: #333333 !important;
+            }
+        }
+        
+        .el-drawer__body {
+            color: #333333 !important;
+            
+            * {
+                color: #333333 !important;
+            }
+        }
+        
+        .el-drawer__footer {
+            color: #333333 !important;
+            border-top: 1px solid #e0e0e0 !important;
+        }
+    }
+    
+    // Popover specific
+    .el-popover {
+        background: #ffffff !important;
+        color: #333333 !important;
+        border: 1px solid #e0e0e0 !important;
+        
+        * {
+            color: #333333 !important;
+        }
+    }
+    
+    // Calendar specific text
+    .el-calendar {
+        .el-calendar-day {
+            color: #333333 !important;
+        }
+        
+        .el-calendar-table td.is-today {
+            color: #409eff !important;
+        }
+        
+        .el-calendar-table td.is-selected {
+            color: #409eff !important;
+        }
+    }
+}
+
+// Light theme tooltips
+html:not(.dark) .el-tooltip__popper {
+    background: #333333 !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+    border-radius: 8px !important;
+    
+    .el-tooltip__arrow::before {
+        background: #333333 !important;
+        border: none !important;
+    }
+}
+
+// Light theme notifications
+html:not(.dark) .el-notification {
+    background: #ffffff !important;
+    border: 1px solid #e0e0e0 !important;
+    color: #333333 !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+    border-radius: 12px !important;
+    
+    .el-notification__title {
+        color: #333333 !important;
+    }
+    
+    .el-notification__content {
+        color: #666666 !important;
+    }
+    
+    .el-notification__icon {
+        color: #666666 !important;
+    }
+    
+    .el-notification__closeBtn {
+        color: #999999 !important;
+        
+        &:hover {
+            color: #333333 !important;
+        }
+    }
+}
+
+// Light theme alerts
+html:not(.dark) .el-alert {
+    background: #ffffff !important;
+    border: 1px solid #e0e0e0 !important;
+    color: #333333 !important;
+    border-radius: 8px !important;
+    
+    .el-alert__title {
+        color: #333333 !important;
+    }
+    
+    .el-alert__description {
+        color: #666666 !important;
+    }
+    
+    .el-alert__icon {
+        color: #666666 !important;
+    }
+    
+    &.el-alert--success {
+        border-color: #67c23a !important;
+        background: #f0f9ff !important;
+        
+        .el-alert__icon {
+            color: #67c23a !important;
+        }
+    }
+    
+    &.el-alert--warning {
+        border-color: #e6a23c !important;
+        background: #fdf6ec !important;
+        
+        .el-alert__icon {
+            color: #e6a23c !important;
+        }
+    }
+    
+    &.el-alert--error,
+    &.el-alert--danger {
+        border-color: #f56c6c !important;
+        background: #fef0f0 !important;
+        
+        .el-alert__icon {
+            color: #f56c6c !important;
+        }
+    }
+    
+    &.el-alert--info {
+        border-color: #909399 !important;
+        background: #f4f4f5 !important;
+        
+        .el-alert__icon {
+            color: #909399 !important;
+        }
+    }
+}
+
+// Light theme badges
+html:not(.dark) .el-badge {
+    .el-badge__content {
+        background: #f56c6c !important;
+        color: #ffffff !important;
+        border: none !important;
+    }
+}
+
+// Light theme skeletons
+html:not(.dark) .el-skeleton {
+    .el-skeleton__item {
+        background: linear-gradient(90deg, #f2f2f2 25%, #e6e6e6 50%, #f2f2f2 75%) !important;
+    }
+}
+
+// Light theme empty states
+html:not(.dark) .el-empty {
+    .el-empty__description {
+        color: #999999 !important;
+    }
+    
+    .el-empty__image {
+        opacity: 0.6;
+    }
+}
+
+// Light theme result pages
+html:not(.dark) .el-result {
+    .el-result__title {
+        color: #333333 !important;
+    }
+    
+    .el-result__subtitle {
+        color: #666666 !important;
+    }
+    
+    .el-result__icon {
+        color: #909399 !important;
+    }
+}
+
+// Light theme radio buttons
+html:not(.dark) .el-radio {
+    color: #333333 !important;
+    
+    .el-radio__label {
+        color: #333333 !important;
+    }
+    
+    .el-radio__input.is-checked .el-radio__inner {
+        background-color: #409eff !important;
+        border-color: #409eff !important;
+    }
+    
+    .el-radio__input.is-disabled .el-radio__inner {
+        background-color: #f5f5f5 !important;
+        border-color: #e0e0e0 !important;
+    }
+}
+
+html:not(.dark) .el-radio-button {
+    .el-radio-button__inner {
+        color: #333333 !important;
+        background: #ffffff !important;
+        border: 1px solid #e0e0e0 !important;
+        border-radius: 8px !important;
+    }
+    
+    .el-radio-button__inner:hover {
+        color: #409eff !important;
+    }
+    
+    &.is-active .el-radio-button__inner {
+        color: #ffffff !important;
+        background: #409eff !important;
+        border-color: #409eff !important;
+    }
+    
+    &.is-disabled .el-radio-button__inner {
+        color: #b3b3b3 !important;
+        background: #f5f5f5 !important;
+        border-color: #e0e0e0 !important;
+        opacity: 0.5;
+    }
+}
+
+// Light theme checkboxes
+html:not(.dark) .el-checkbox {
+    color: #333333 !important;
+    
+    .el-checkbox__label {
+        color: #333333 !important;
+    }
+    
+    .el-checkbox__input.is-checked .el-checkbox__inner {
+        background-color: #409eff !important;
+        border-color: #409eff !important;
+    }
+    
+    .el-checkbox__input.is-disabled .el-checkbox__inner {
+        background-color: #f5f5f5 !important;
+        border-color: #e0e0e0 !important;
+    }
+}
+
+// Light theme collapse items
+html:not(.dark) .el-collapse-item {
+    .el-collapse-item__header {
+        color: #333333 !important;
+        background-color: transparent !important;
+        border-bottom: 1px solid #e0e0e0 !important;
+    }
+    
+    .el-collapse-item__content {
+        color: #666666 !important;
+        background-color: #f5f5f5 !important;
+        border-radius: 8px !important;
+    }
+    
+    .el-collapse-item__arrow {
+        color: #666666 !important;
+    }
+}
+
+// Light theme timeline
+html:not(.dark) .el-timeline {
+    .el-timeline-item__timestamp {
+        color: #999999 !important;
+    }
+    
+    .el-timeline-item__content {
+        color: #333333 !important;
+    }
+    
+    .el-timeline-item__node {
+        background-color: #d0d0d0 !important;
+        border-color: #d0d0d0 !important;
+    }
+    
+    .el-timeline-item__tail {
+        border-left-color: #e0e0e0 !important;
+    }
+}
+
+// Light theme tree - additional styles
+html:not(.dark) .el-tree-node {
+    .el-tree-node__content {
+        color: #333333 !important;
+        
+        &:hover {
+            background-color: #f0f0f0 !important;
+        }
+    }
+    
+    &.is-current > .el-tree-node__content {
+        background-color: #e6f7ff !important;
+        color: #409eff !important;
+    }
+    
+    .el-tree-node__label {
+        color: #333333 !important;
+    }
+    
+    .el-tree-node__expand-icon {
+        color: #666666 !important;
+    }
+}

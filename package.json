@@ -1,0 +1,195 @@
+{
+    "name": "VRCXM",
+    "description": "Friendship management tool for VRChat (VRCX Fork)",
+    "private": true,
+    "main": "src-electron/main.js",
+    "scripts": {
+        "dev": "cross-env PLATFORM=windows vite serve src",
+        "dev-linux": "cross-env PLATFORM=linux vite serve src",
+        "dev:test": "concurrently \"npm run dev\" \"jest --watchAll\"",
+        "localization": "node ./src/localization/localizationHelperCLI.js",
+        "test": "jest",
+        "test:coverage": "jest --coverage",
+        "prod": "cross-env PLATFORM=windows vite build src",
+        "prod-linux": "cross-env PLATFORM=linux vite build src",
+        "build-electron": "node ./src-electron/download-dotnet-runtime.js --arch=x64 && node ./src-electron/patch-package-version.js && electron-builder --x64 --publish never",
+        "build-electron-arm64": "node ./src-electron/download-dotnet-runtime.js --arch=arm64 && node ./src-electron/patch-package-version.js && electron-builder --arm64 --publish never",
+        "postbuild-electron": "node ./src-electron/patch-node-api-dotnet.js --arch=x64 && node ./src-electron/rename-builds.js --arch=x64",
+        "postbuild-electron-arm64": "node ./src-electron/patch-node-api-dotnet.js --arch=arm64 && node ./src-electron/rename-builds.js --arch=arm64",
+        "start-electron": "electron .",
+        "dev-electron": "cross-env NODE_ENV=development concurrently \"npm run dev\" \"wait-on http://localhost:9000 && cross-env DEV=true electron .\"",
+        "dev-electron:linux": "cross-env NODE_ENV=development concurrently \"npm run dev-linux\" \"wait-on http://localhost:9000 && cross-env DEV=true electron .\""
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/naiolune/VRCXM.git"
+    },
+    "keywords": [
+        "vrchat",
+        "vrcxm"
+    ],
+    "author": "naiolune",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/naiolune/VRCXM/issues"
+    },
+    "homepage": "https://github.com/naiolune/VRCXM#readme",
+    "devDependencies": {
+        "@electron/rebuild": "^4.0.1",
+        "@eslint/js": "^9.38.0",
+        "@fontsource/noto-sans-jp": "^5.2.8",
+        "@fontsource/noto-sans-kr": "^5.2.8",
+        "@fontsource/noto-sans-sc": "^5.2.8",
+        "@fontsource/noto-sans-tc": "^5.2.8",
+        "@kamiya4047/eslint-plugin-pretty-import": "^0.1.6",
+        "@sentry/vite-plugin": "^4.6.0",
+        "@sentry/vue": "^10.22.0",
+        "@types/jest": "^30.0.0",
+        "@types/node": "^24.9.1",
+        "@vitejs/plugin-vue": "^6.0.1",
+        "animate.css": "^4.1.1",
+        "babel-runtime": "^6.26.0",
+        "concurrently": "^9.2.1",
+        "cross-env": "^10.1.0",
+        "dayjs": "^1.11.18",
+        "echarts": "^6.0.0",
+        "electron": "^38.4.0",
+        "electron-builder": "^26.0.12",
+        "element-plus": "^2.11.5",
+        "esbuild-jest": "^0.5.0",
+        "eslint": "^9.38.0",
+        "eslint-config-prettier": "^10.1.8",
+        "eslint-plugin-prettier": "^5.5.4",
+        "eslint-plugin-vue": "^9.33.0",
+        "globals": "^16.4.0",
+        "jest": "^30.2.0",
+        "noty": "^3.2.0-beta-deprecated",
+        "pinia": "^3.0.3",
+        "prettier": "^3.6.2",
+        "remixicon": "^4.7.0",
+        "sass-embedded": "^1.93.2",
+        "vite": "^7.1.12",
+        "vue": "^3.5.22",
+        "vue-i18n": "^11.1.12",
+        "vue-marquee-text-component": "^2.0.1",
+        "vue-router": "^4.6.3",
+        "vue-showdown": "^4.2.0",
+        "wait-on": "^9.0.3",
+        "worker-timers": "^8.0.25",
+        "yargs": "^18.0.0"
+    },
+    "build": {
+        "appId": "app.vrcxm",
+        "productName": "VRCXM",
+        "icon": "images/VRCX.png",
+        "files": [
+            "build/html/**/*",
+            "src-electron/*",
+            "images/VRCX.png",
+            "images/VRCX.ico",
+            "images/VRCX_notify.png",
+            "images/VRCX_notify.ico",
+            "Version",
+            "src-electron/libs/linux/libopenvr_api.so"
+        ],
+        "asarUnpack": [
+            "node_modules/node-api-dotnet/**/*",
+            "node_modules/node-api-dotnet/net9.0/**/*",
+            "build/Electron/*",
+            "build/Electron/**",
+            "build/Electron/dotnet-runtime/**/*",
+            "src-electron/libs/linux/libopenvr_api.so"
+        ],
+        "extraResources": [
+            {
+                "from": "build/Electron/",
+                "to": "app.asar.unpacked/build/Electron/"
+            },
+            {
+                "from": "node_modules/node-api-dotnet/net9.0/Microsoft.JavaScript.NodeApi.dll",
+                "to": "app.asar.unpacked/node_modules/node-api-dotnet/net9.0/Microsoft.JavaScript.NodeApi.dll"
+            },
+            {
+                "from": "node_modules/node-api-dotnet/net9.0/Microsoft.JavaScript.NodeApi.DotNetHost.dll",
+                "to": "app.asar.unpacked/node_modules/node-api-dotnet/net9.0/Microsoft.JavaScript.NodeApi.DotNetHost.dll"
+            },
+            {
+                "from": "build/Electron/dotnet-runtime/",
+                "to": "dotnet-runtime/"
+            },
+            {
+                "from": "src-electron/libs/linux/libopenvr_api.so",
+                "to": "bin/libopenvr_api.so"
+            },
+            {
+                "from": "src-electron/libs/linux/libopenvr_api.so",
+                "to": "app.asar.unpacked/build/Electron/openvr_api.so"
+            }
+        ],
+        "directories": {
+            "output": "build"
+        },
+        "win": {
+            "target": [
+                {
+                    "target": "nsis",
+                    "arch": [
+                        "x64"
+                    ]
+                }
+            ],
+            "artifactName": "VRCXM_Setup_${version}.${ext}",
+            "forceCodeSigning": false,
+            "requestedExecutionLevel": "requireAdministrator"
+        },
+        "nsis": {
+            "oneClick": false,
+            "allowToChangeInstallationDirectory": true,
+            "createDesktopShortcut": true,
+            "createStartMenuShortcut": true,
+            "shortcutName": "VRCXM",
+            "installerIcon": "images/VRCX.ico",
+            "uninstallerIcon": "images/VRCX.ico",
+            "installerHeaderIcon": "images/VRCX.ico",
+            "deleteAppDataOnUninstall": false,
+            "runAfterFinish": false,
+            "menuCategory": false,
+            "include": "Installer/custom-installer.nsh"
+        },
+        "linux": {
+            "artifactName": "VRCXM_Version.${ext}",
+            "target": [
+                "AppImage"
+            ],
+            "icon": "images/VRCX.png",
+            "category": "Utility",
+            "executableName": "vrcxm",
+            "desktop": {
+                "entry": {
+                    "Name": "VRCXM",
+                    "Comment": "Friendship management tool for VRChat (VRCX Fork)",
+                    "Icon": "VRCX",
+                    "Terminal": "false",
+                    "Type": "Application",
+                    "Categories": "Utility;Application;"
+                }
+            },
+            "maintainer": "naiolune",
+            "description": "Friendship management tool for VRChat"
+        },
+        "mac": {
+            "artifactName": "VRCXM_Version.${ext}",
+            "target": [
+                "dmg"
+            ],
+            "icon": "images/VRCX.png",
+            "category": "public.app-category.utilities",
+            "executableName": "VRCXM"
+        }
+    },
+    "dependencies": {
+        "hazardous": "^0.3.0",
+        "node-api-dotnet": "^0.9.17"
+    },
+    "version": "2025.11.15"
+}
