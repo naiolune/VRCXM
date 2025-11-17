@@ -124,18 +124,20 @@ namespace VRCX
         public override void SetVRChatRegistryKey(string key, byte[] value)
         {
             var keyName = AddHashToKeyName(key);
-            var hKey = (UIntPtr)0x80000001; // HKEY_LOCAL_MACHINE
-            const int keyWrite = 0x20006;
-            const string keyFolder = @"SOFTWARE\VRChat\VRChat";
-            var openKeyResult = RegOpenKeyEx(hKey, keyFolder, 0, keyWrite, out var folderPointer);
-            if (openKeyResult != 0)
-                throw new Exception("Error opening registry key. Error code: " + openKeyResult);
+            using var regKey = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\VRChat\VRChat", true);
+            if (regKey == null)
+                throw new Exception("Error opening registry key. Registry key does not exist.");
 
-            var setKeyResult = RegSetValueEx(folderPointer, keyName, 0, RegistryValueKind.DWord, value, value.Length);
-            if (setKeyResult != 0)
-                throw new Exception("Error setting registry value. Error code: " + setKeyResult);
-
-            RegCloseKey(hKey);
+            // Convert byte array to DWORD (8 bytes for type 100 float values)
+            if (value.Length == sizeof(long))
+            {
+                var longValue = BitConverter.ToInt64(value, 0);
+                regKey.SetValue(keyName, longValue, RegistryValueKind.DWord);
+            }
+            else
+            {
+                throw new Exception($"Invalid byte array length for registry value. Expected {sizeof(long)} bytes, got {value.Length}.");
+            }
         }
 
         public override Dictionary<string, Dictionary<string, object>> GetVRChatRegistry()

@@ -140,7 +140,7 @@
             ],
             "artifactName": "VRCXM_Setup_${version}.${ext}",
             "forceCodeSigning": false,
-            "requestedExecutionLevel": "requireAdministrator"
+            "requestedExecutionLevel": "asInvoker"
         },
         "nsis": {
             "oneClick": false,
