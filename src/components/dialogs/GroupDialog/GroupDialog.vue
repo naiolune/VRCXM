@@ -4,7 +4,7 @@
         v-model="groupDialog.visible"
         :show-close="false"
         width="1100px"
-        top="3vh"
+        top="0"
         class="x-dialog x-group-dialog group-dialog-modern">
         <div v-loading="groupDialog.loading" class="group-dialog-container">
             <!-- Modern Header -->
@@ -1143,7 +1143,7 @@
             margin: 0 !important;
         }
 
-        :deep(.el-overlay-dialog) {
+        :deep(.el-dialog__wrapper) {
             height: 100vh !important;
             width: 100vw !important;
             position: fixed !important;
@@ -1152,20 +1152,8 @@
             padding: 0 !important;
             margin: 0 !important;
             display: flex !important;
-            align-items: stretch !important;
-            justify-content: stretch !important;
-        }
-
-        :deep(.el-dialog__wrapper) {
-            align-items: stretch !important;
-            justify-content: stretch !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            height: 100vh !important;
-            width: 100vw !important;
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
+            align-items: center !important;
+            justify-content: center !important;
         }
 
         :deep(.el-dialog) {
@@ -1174,21 +1162,14 @@
             border-radius: 0 !important;
             box-shadow: 0 24px 96px rgba(0, 0, 0, 0.95) !important;
             backdrop-filter: blur(20px);
-            overflow: hidden;
-            height: 100vh !important;
-            max-height: 100vh !important;
-            min-height: 100vh !important;
             margin: 0 !important;
             padding: 0 !important;
-            display: flex !important;
-            flex-direction: column !important;
-            position: relative !important;
-            top: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            bottom: 0 !important;
+            height: 100vh !important;
             width: 100vw !important;
             max-width: 100vw !important;
+            max-height: 100vh !important;
+            display: flex !important;
+            flex-direction: column !important;
         }
 
         :deep(.el-dialog__header) {
@@ -1197,48 +1178,44 @@
 
         :deep(.el-dialog__body) {
             padding: 0 !important;
+            margin: 0 !important;
             background: transparent !important;
-            overflow: hidden;
-            flex: 1 !important;
+            flex: 1 1 auto !important;
             min-height: 0 !important;
-            height: 100% !important;
+            overflow: hidden !important;
+            display: flex !important;
+            flex-direction: column !important;
         }
     }
 
     .group-dialog-container {
         display: flex;
         flex-direction: column;
-        height: 100vh;
-        max-height: 100vh;
+        height: 100%;
         overflow: hidden;
-        background: transparent;
     }
 
     .group-dialog-header {
         flex-shrink: 0;
-        padding: 0;
-        margin: 0;
-        background: transparent;
     }
 
     .group-dialog-body {
-        flex: 1;
+        flex: 1 1 auto;
+        min-height: 0;
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        padding: 0;
-        min-height: 0;
     }
 
     .group-dialog-tabs-container {
-        flex: 1;
+        flex: 1 1 auto;
+        min-height: 0;
         display: flex;
         flex-direction: column;
         overflow: hidden;
         background: rgba(255, 255, 255, 0.02);
         border-top: 1px solid rgba(255, 255, 255, 0.08);
         padding: 0;
-        min-height: 0;
     }
 
     .group-dialog-tabs {
@@ -1313,21 +1290,21 @@
         }
 
         :deep(.el-tabs__content) {
-            flex: 1;
+            flex: 1 1 auto;
+            min-height: 0;
             overflow: hidden;
             display: flex;
             flex-direction: column;
             padding: 0;
-            min-height: 0;
             background: transparent;
         }
 
         :deep(.el-tab-pane) {
-            flex: 1;
+            flex: 1 1 auto;
+            min-height: 0;
             overflow-y: auto;
             overflow-x: hidden;
             padding: 20px 20px 80px 20px;
-            min-height: 0;
             background: transparent;
 
             // Modern content wrapper
