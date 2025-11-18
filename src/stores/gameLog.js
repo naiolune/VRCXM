@@ -78,7 +78,8 @@ export const useGameLogStore = defineStore('GameLog', () => {
             layout: 'sizes,prev,pager,next,total',
             pageSizes: [10, 15, 20, 25, 50, 100]
         },
-        vip: false
+        vip: false,
+        dateRange: null
     });
 
     const gameLogSessionTable = ref([]);
@@ -139,6 +140,14 @@ export const useGameLogStore = defineStore('GameLog', () => {
             'VRCX_gameLogTableVIPFilter',
             false
         );
+        const dateRangeStr = await configRepository.getString('VRCX_gameLogTableDateRange', '');
+        if (dateRangeStr) {
+            try {
+                gameLogTable.value.dateRange = JSON.parse(dateRangeStr);
+            } catch (e) {
+                gameLogTable.value.dateRange = null;
+            }
+        }
     }
 
     init();
@@ -344,6 +353,14 @@ export const useGameLogStore = defineStore('GameLog', () => {
             'VRCX_gameLogTableVIPFilter',
             gameLogTable.value.vip
         );
+        if (gameLogTable.value.dateRange) {
+            await configRepository.setString(
+                'VRCX_gameLogTableDateRange',
+                JSON.stringify(gameLogTable.value.dateRange)
+            );
+        } else {
+            await configRepository.setString('VRCX_gameLogTableDateRange', '');
+        }
         gameLogTable.value.loading = true;
         let vipList = [];
         if (gameLogTable.value.vip) {
@@ -352,7 +369,8 @@ export const useGameLogStore = defineStore('GameLog', () => {
         gameLogTable.value.data = await database.lookupGameLogDatabase(
             gameLogTable.value.search,
             gameLogTable.value.filter,
-            vipList
+            vipList,
+            gameLogTable.value.dateRange
         );
         gameLogTable.value.loading = false;
     }
@@ -717,6 +735,7 @@ export const useGameLogStore = defineStore('GameLog', () => {
                     location
                 };
                 database.addGamelogResourceLoadToDatabase(entry);
+                addGameLog(entry);
                 break;
             case 'screenshot':
                 // entry = {

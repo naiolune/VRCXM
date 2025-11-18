@@ -80,6 +80,9 @@ if (process.arch === 'arm64') {
 const InteropApi = require('./InteropApi');
 const interopApi = new InteropApi();
 
+// Debug flag for verbose IPC logging (set to true for debugging IPC issues)
+const IPC_DEBUG_VERBOSE = false;
+
 const WRIST_FRAME_WIDTH = 512;
 const WRIST_FRAME_HEIGHT = 512;
 const WRIST_FRAME_SIZE = WRIST_FRAME_WIDTH * WRIST_FRAME_HEIGHT * 4;
@@ -501,7 +504,7 @@ ipcMain.handle(
                 );
 
                 // Log the raw result for SQLite methods
-                if (className === 'SQLite') {
+                if (IPC_DEBUG_VERBOSE && className === 'SQLite') {
                     console.log(`\n[IPC] ========================================`);
                     console.log(`[IPC] SQLite.${methodName} called - Raw result:`);
                     logObjectProperties(result, 'Raw result', 0);
@@ -517,7 +520,9 @@ ipcMain.handle(
                 // Special handling for SQLite and WebApi methods which return data with potentially non-serializable objects
                 // node-api-dotnet may wrap results in Promise-like objects that cannot be cloned
                 if ((className === 'SQLite' || className === 'WebApi') && result !== null && result !== undefined) {
-                    console.log(`[IPC] Processing ${className}.${methodName} result...`);
+                    if (IPC_DEBUG_VERBOSE) {
+                        console.log(`[IPC] Processing ${className}.${methodName} result...`);
+                    }
                     
                     // Handle case where result is an array [Item1, Item2] instead of object {Item1, Item2}
                     // This happens when the Tuple gets serialized as an array
@@ -538,19 +543,21 @@ ipcMain.handle(
                         if (className === 'SQLite' && Array.isArray(cleanedResult.Item2)) {
                         // Convert Tuple<Item1, Item2> structure to a plain object
                         // Remove any Promise-like properties that node-api-dotnet might add
-                        console.log(`[IPC] SQLite.Execute: Processing ${cleanedResult.Item2.length} rows`);
-                        if (cleanedResult.Item2.length > 0) {
-                            console.log(`[IPC] First row before processing:`, {
-                                isArray: Array.isArray(cleanedResult.Item2[0]),
-                                type: typeof cleanedResult.Item2[0],
-                                keys: Object.keys(cleanedResult.Item2[0] || {}),
-                                length: cleanedResult.Item2[0]?.length,
-                                raw: cleanedResult.Item2[0]
-                            });
+                        if (IPC_DEBUG_VERBOSE) {
+                            console.log(`[IPC] SQLite.Execute: Processing ${cleanedResult.Item2.length} rows`);
+                            if (cleanedResult.Item2.length > 0) {
+                                console.log(`[IPC] First row before processing:`, {
+                                    isArray: Array.isArray(cleanedResult.Item2[0]),
+                                    type: typeof cleanedResult.Item2[0],
+                                    keys: Object.keys(cleanedResult.Item2[0] || {}),
+                                    length: cleanedResult.Item2[0]?.length,
+                                    raw: cleanedResult.Item2[0]
+                                });
+                            }
                         }
                         const sanitizedItem2 = cleanedResult.Item2.map((row, rowIndex) => {
                             if (Array.isArray(row)) {
-                                if (rowIndex === 0) {
+                                if (IPC_DEBUG_VERBOSE && rowIndex === 0) {
                                     console.log(`[IPC] Row ${rowIndex} is array with ${row.length} elements:`, row.slice(0, 5));
                                 }
                                 return row.map((cell) => {
@@ -577,27 +584,27 @@ ipcMain.handle(
                             }
                             // If row is an object (not an array), try to convert it to an array
                             // This can happen if the row was serialized as an object with numeric keys
-                            // or if it's an External object from .NET that doesn't expose enumerable properties
-                            if (typeof row === 'object' && row !== null) {
-                                if (rowIndex === 0) {
-                                    // Check if it's an External object without converting to string (which would fail)
-                                    let isExternal = false;
-                                    try {
-                                        const str = String(row);
-                                        isExternal = str.includes('[External:');
-                                    } catch (e) {
-                                        // If String() fails, it's likely an External object
-                                        isExternal = true;
-                                    }
-                                    console.log(`[IPC] Row ${rowIndex} is object:`, {
-                                        keys: Object.keys(row),
-                                        ownPropertyNames: Object.getOwnPropertyNames(row),
-                                        hasLength: 'length' in row,
-                                        length: row.length,
-                                        raw: row,
-                                        isExternal: isExternal
-                                    });
-                                }
+                                    // or if it's an External object from .NET that doesn't expose enumerable properties
+                                    if (typeof row === 'object' && row !== null) {
+                                        if (IPC_DEBUG_VERBOSE && rowIndex === 0) {
+                                            // Check if it's an External object without converting to string (which would fail)
+                                            let isExternal = false;
+                                            try {
+                                                const str = String(row);
+                                                isExternal = str.includes('[External:');
+                                            } catch (e) {
+                                                // If String() fails, it's likely an External object
+                                                isExternal = true;
+                                            }
+                                            console.log(`[IPC] Row ${rowIndex} is object:`, {
+                                                keys: Object.keys(row),
+                                                ownPropertyNames: Object.getOwnPropertyNames(row),
+                                                hasLength: 'length' in row,
+                                                length: row.length,
+                                                raw: row,
+                                                isExternal: isExternal
+                                            });
+                                        }
                                 
                                 let arrayRow = null;
                                 
@@ -678,7 +685,7 @@ ipcMain.handle(
                                             }
                                         }
                                         
-                                        if (rowIndex === 0) {
+                                        if (IPC_DEBUG_VERBOSE && rowIndex === 0) {
                                             console.log(`[IPC] Converting row ${rowIndex} External/object to array, detected length: ${rowLength || 'probing'}, using maxIndex: ${actualMaxIndex}`);
                                         }
                                         arrayRow = [];
@@ -712,7 +719,7 @@ ipcMain.handle(
                                             }
                                         }
                                         if (arrayRow.length > 0) {
-                                            if (rowIndex === 0) {
+                                            if (IPC_DEBUG_VERBOSE && rowIndex === 0) {
                                                 console.log(`[IPC] Successfully converted External row to array with ${arrayRow.length} elements`);
                                             }
                                             return arrayRow;
@@ -725,7 +732,7 @@ ipcMain.handle(
                                 const ownProps = Object.getOwnPropertyNames(row);
                                 const numericKeys = ownProps.filter(k => /^\d+$/.test(k));
                                 if (numericKeys.length > 0) {
-                                    if (rowIndex === 0) {
+                                    if (IPC_DEBUG_VERBOSE && rowIndex === 0) {
                                         console.log(`[IPC] Converting row ${rowIndex} object to array, found ${numericKeys.length} numeric keys`);
                                     }
                                     // Convert object with numeric keys to array
@@ -799,57 +806,83 @@ ipcMain.handle(
                     // Assign the cleaned result back
                     result = cleanedResult;
                     
-                    console.log(`[IPC] SQLite.${methodName} - After cleaning:`);
-                    logObjectProperties(result, 'Cleaned result', 0);
+                    if (IPC_DEBUG_VERBOSE) {
+                        console.log(`[IPC] SQLite.${methodName} - After cleaning:`);
+                        logObjectProperties(result, 'Cleaned result', 0);
+                    }
                 }
 
                 // Sanitize return value to ensure it's serializable
-                console.log(`[IPC] ${className}.${methodName} - Before sanitization:`);
-                logObjectProperties(result, 'Before sanitization', 0);
+                if (IPC_DEBUG_VERBOSE) {
+                    console.log(`[IPC] ${className}.${methodName} - Before sanitization:`);
+                    logObjectProperties(result, 'Before sanitization', 0);
+                }
                 const sanitized = sanitizeValue(result);
-                console.log(`[IPC] ${className}.${methodName} - After sanitization:`);
-                logObjectProperties(sanitized, 'After sanitization', 0);
+                if (IPC_DEBUG_VERBOSE) {
+                    console.log(`[IPC] ${className}.${methodName} - After sanitization:`);
+                    logObjectProperties(sanitized, 'After sanitization', 0);
+                }
 
                 // Use JSON round-trip first, then test with v8.serialize (structured clone)
                 // v8.serialize uses the same structured clone algorithm as Electron IPC
                 try {
-                    console.log(`[IPC] ${className}.${methodName} - Attempting JSON.stringify...`);
+                    if (IPC_DEBUG_VERBOSE) {
+                        console.log(`[IPC] ${className}.${methodName} - Attempting JSON.stringify...`);
+                    }
                     // Handle undefined/null values - JSON.stringify(undefined) returns undefined, not a string
                     if (sanitized === undefined || sanitized === null) {
-                        console.log(`[IPC] ${className}.${methodName} - Result is ${sanitized}, returning as-is`);
+                        if (IPC_DEBUG_VERBOSE) {
+                            console.log(`[IPC] ${className}.${methodName} - Result is ${sanitized}, returning as-is`);
+                        }
                         return sanitized;
                     }
                     const jsonString = JSON.stringify(sanitized);
-                    console.log(`[IPC] ${className}.${methodName} - JSON.stringify succeeded, length: ${jsonString?.length ?? 0}`);
+                    if (IPC_DEBUG_VERBOSE) {
+                        console.log(`[IPC] ${className}.${methodName} - JSON.stringify succeeded, length: ${jsonString?.length ?? 0}`);
+                    }
                     const jsonCloned = JSON.parse(jsonString);
-                    console.log(`[IPC] ${className}.${methodName} - JSON.parse succeeded`);
+                    if (IPC_DEBUG_VERBOSE) {
+                        console.log(`[IPC] ${className}.${methodName} - JSON.parse succeeded`);
+                    }
 
                     // Test with v8.serialize to ensure it's compatible with Electron's structured clone
                     try {
-                        console.log(`[IPC] ${className}.${methodName} - Attempting v8.serialize...`);
+                        if (IPC_DEBUG_VERBOSE) {
+                            console.log(`[IPC] ${className}.${methodName} - Attempting v8.serialize...`);
+                        }
                         const serialized = v8.serialize(jsonCloned);
-                        console.log(`[IPC] ${className}.${methodName} - v8.serialize succeeded, length: ${serialized.length}`);
+                        if (IPC_DEBUG_VERBOSE) {
+                            console.log(`[IPC] ${className}.${methodName} - v8.serialize succeeded, length: ${serialized.length}`);
+                        }
                         const deserialized = v8.deserialize(serialized);
-                        console.log(`[IPC] ${className}.${methodName} - v8.deserialize succeeded`);
+                        if (IPC_DEBUG_VERBOSE) {
+                            console.log(`[IPC] ${className}.${methodName} - v8.deserialize succeeded`);
+                        }
                         
                         // Final safety check: ensure the deserialized value can be cloned again
                         // (Electron IPC might clone it one more time when sending)
                         try {
-                            console.log(`[IPC] ${className}.${methodName} - Final clone check...`);
+                            if (IPC_DEBUG_VERBOSE) {
+                                console.log(`[IPC] ${className}.${methodName} - Final clone check...`);
+                            }
                             v8.serialize(deserialized);
-                            console.log(`[IPC] ${className}.${methodName} - ✅ Successfully serialized, returning result`);
+                            if (IPC_DEBUG_VERBOSE) {
+                                console.log(`[IPC] ${className}.${methodName} - ✅ Successfully serialized, returning result`);
+                            }
                             return deserialized;
                         } catch (finalCloneError) {
                             console.error(
                                 `[IPC] ${className}.${methodName} - ❌ Final clone check failed:`,
                                 finalCloneError
                             );
-                            console.error(`[IPC] Error details:`, {
-                                message: finalCloneError?.message,
-                                name: finalCloneError?.name,
-                                stack: finalCloneError?.stack
-                            });
-                            logObjectProperties(deserialized, 'Failed object', 0);
+                            if (IPC_DEBUG_VERBOSE) {
+                                console.error(`[IPC] Error details:`, {
+                                    message: finalCloneError?.message,
+                                    name: finalCloneError?.name,
+                                    stack: finalCloneError?.stack
+                                });
+                                logObjectProperties(deserialized, 'Failed object', 0);
+                            }
                             // Use the plain copy instead
                             const finalPlainCopy = createPlainCopy(jsonCloned);
                             v8.serialize(finalPlainCopy);
@@ -861,19 +894,25 @@ ipcMain.handle(
                             `[IPC] ${className}.${methodName} - ❌ v8 serialization failed:`,
                             v8Error
                         );
-                        console.error(`[IPC] v8Error details:`, {
-                            message: v8Error?.message,
-                            name: v8Error?.name,
-                            stack: v8Error?.stack
-                        });
-                        logObjectProperties(jsonCloned, 'Object that failed v8.serialize', 0);
+                        if (IPC_DEBUG_VERBOSE) {
+                            console.error(`[IPC] v8Error details:`, {
+                                message: v8Error?.message,
+                                name: v8Error?.name,
+                                stack: v8Error?.stack
+                            });
+                            logObjectProperties(jsonCloned, 'Object that failed v8.serialize', 0);
+                        }
                         
                         // Create a completely plain object by recursively copying only plain properties
                         const plainCopy = createPlainCopy(jsonCloned);
                         try {
-                            console.log(`[IPC] ${className}.${methodName} - Trying plainCopy...`);
+                            if (IPC_DEBUG_VERBOSE) {
+                                console.log(`[IPC] ${className}.${methodName} - Trying plainCopy...`);
+                            }
                             v8.serialize(plainCopy);
-                            console.log(`[IPC] ${className}.${methodName} - ✅ plainCopy serialization succeeded`);
+                            if (IPC_DEBUG_VERBOSE) {
+                                console.log(`[IPC] ${className}.${methodName} - ✅ plainCopy serialization succeeded`);
+                            }
                             return plainCopy;
                         } catch (e2) {
                             // Last resort: return a safe representation
@@ -881,7 +920,9 @@ ipcMain.handle(
                                 `[IPC] ${className}.${methodName} - ❌ Deep sanitization also failed:`,
                                 e2
                             );
-                            logObjectProperties(plainCopy, 'Object that failed even after plainCopy', 0);
+                            if (IPC_DEBUG_VERBOSE) {
+                                logObjectProperties(plainCopy, 'Object that failed even after plainCopy', 0);
+                            }
                             return {
                                 __serializationError: true,
                                 __error: v8Error?.message || String(v8Error),
@@ -896,12 +937,14 @@ ipcMain.handle(
                         `[IPC] ${className}.${methodName} - ❌ JSON.stringify/parse failed:`,
                         jsonError
                     );
-                    console.error(`[IPC] jsonError details:`, {
-                        message: jsonError?.message,
-                        name: jsonError?.name,
-                        stack: jsonError?.stack
-                    });
-                    logObjectProperties(sanitized, 'Object that failed JSON.stringify', 0);
+                    if (IPC_DEBUG_VERBOSE) {
+                        console.error(`[IPC] jsonError details:`, {
+                            message: jsonError?.message,
+                            name: jsonError?.name,
+                            stack: jsonError?.stack
+                        });
+                        logObjectProperties(sanitized, 'Object that failed JSON.stringify', 0);
+                    }
                     
                     // Return a safe representation
                     return {
@@ -1644,7 +1687,7 @@ async function createDesktopFile() {
             fs.mkdirSync(iconDir, { recursive: true });
         }
         const iconUrl =
-            'https://raw.githubusercontent.com/vrcx-team/VRCX/master/VRCX.png';
+            'https://raw.githubusercontent.com/naiolune/VRCXM/master/VRCX.png';
         await downloadIcon(iconUrl, iconPath)
             .then(() => {
                 console.log('Icon downloaded and saved to:', iconPath);
@@ -1769,14 +1812,23 @@ function getVersion() {
         // look for trailing git hash "-22bcd96" to indicate nightly build
         const version = versionFile.split('-');
         console.log('Version:', versionFile);
+        
+        // Detect platform
+        const platform = process.platform === 'linux' ? 'Linux' : 
+                        process.platform === 'win32' ? 'Windows' :
+                        process.platform === 'darwin' ? 'macOS' : 'Unknown';
+        
         if (version.length > 0 && version[version.length - 1].length == 7) {
-            return `VRCXM (Linux) Nightly ${versionFile}`;
+            return `VRCXM (${platform}) Nightly ${versionFile}`;
         } else {
-            return `VRCXM (Linux) ${versionFile}`;
+            return `VRCXM (${platform}) ${versionFile}`;
         }
     } catch (err) {
         console.error('Error reading Version:', err);
-        return 'VRCXM (Linux) Nightly Build';
+        const platform = process.platform === 'linux' ? 'Linux' : 
+                        process.platform === 'win32' ? 'Windows' :
+                        process.platform === 'darwin' ? 'macOS' : 'Unknown';
+        return `VRCXM (${platform}) Nightly Build`;
     }
 }
 

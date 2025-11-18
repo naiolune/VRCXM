@@ -93,6 +93,16 @@ namespace VRCX
 
         public override string GetVRChatAppDataLocation()
         {
+            // On Windows, VRChat runs natively, so use the native Windows path
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                // LocalLow is at %USERPROFILE%\AppData\LocalLow, not Local\Low
+                var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                var localLow = localAppData.Replace(@"\Local", @"\LocalLow");
+                return Path.Join(localLow, "VRChat", "VRChat");
+            }
+            
+            // On Linux, VRChat runs through Wine/Proton, so use the Wine path
             return _vrcAppDataPath;
         }
 

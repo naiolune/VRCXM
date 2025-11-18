@@ -80,7 +80,8 @@ export const useNotificationStore = defineStore('Notification', () => {
             small: true,
             layout: 'sizes,prev,pager,next,total',
             pageSizes: [10, 15, 20, 25, 50, 100]
-        }
+        },
+        dateRange: null
     });
     const unseenNotifications = ref([]);
     const isNotificationsLoading = ref(false);
@@ -106,9 +107,40 @@ export const useNotificationStore = defineStore('Notification', () => {
                 '[]'
             )
         );
+        const dateRangeStr = await configRepository.getString('VRCX_notificationTableDateRange', '');
+        if (dateRangeStr) {
+            try {
+                notificationTable.value.dateRange = JSON.parse(dateRangeStr);
+            } catch (e) {
+                notificationTable.value.dateRange = null;
+            }
+        }
     }
 
     init();
+
+    async function notificationTableLookup() {
+        await configRepository.setString(
+            'VRCX_notificationTableFilters',
+            JSON.stringify(notificationTable.value.filters[0].value)
+        );
+        if (notificationTable.value.dateRange) {
+            await configRepository.setString(
+                'VRCX_notificationTableDateRange',
+                JSON.stringify(notificationTable.value.dateRange)
+            );
+        } else {
+            await configRepository.setString('VRCX_notificationTableDateRange', '');
+        }
+        
+        isNotificationsLoading.value = true;
+        notificationTable.value.data = await database.lookupNotifications(
+            notificationTable.value.filters[1].value,
+            notificationTable.value.filters[0].value,
+            notificationTable.value.dateRange
+        );
+        isNotificationsLoading.value = false;
+    }
 
     function handleNotification(args) {
         args.ref = applyNotification(args.json);
@@ -2344,6 +2376,7 @@ export const useNotificationStore = defineStore('Notification', () => {
         initNotifications,
         expireNotification,
         refreshNotifications,
+        notificationTableLookup,
         queueNotificationNoty,
         playNoty,
         queueGameLogNoty,

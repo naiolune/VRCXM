@@ -14,7 +14,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 
-#if !LINUX
+#if !LINUX && !ELECTRON && !ELECTRON
 using System.Windows.Forms;
 using CefSharp.Internals;
 #endif
@@ -43,7 +43,7 @@ namespace VRCX
                 {
                     var message =
                         "Move your \"VRCX.sqlite3\" into a folder then specify the folder in the launch parameter e.g.\n--config=\"C:\\VRCX\\\"";
-#if !LINUX
+#if !LINUX && !ELECTRON
                     MessageBox.Show(message, "--config is now a directory", MessageBoxButtons.OK, MessageBoxIcon.Error);
 #endif
                     Console.WriteLine(message);
@@ -53,7 +53,7 @@ namespace VRCX
                 Program.AppDataDirectory = LaunchArguments.ConfigDirectory;
             }
 
-#if !LINUX
+#if !LINUX && !ELECTRON
             var disableClosing = LaunchArguments.IsUpgrade || // we're upgrading, allow it
                                   !string.IsNullOrEmpty(CommandLineArgsParser.GetArgumentValue(args, CefSharpArguments.SubProcessTypeArgument)); // we're launching a subprocess, allow it
 

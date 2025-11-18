@@ -196,7 +196,7 @@
                 <el-button
                     size="small"
                     :icon="Paperclip"
-                    @click="openExternalLink('https://github.com/vrcx-team/VRCX/wiki/Launch-parameters-&-VRCX.json')"
+                    @click="openExternalLink('https://github.com/naiolune/VRCXM/wiki/Launch-parameters-&-VRCX.json')"
                     >{{ t('view.settings.advanced.advanced.launch_commands.docs') }}</el-button
                 >
                 <el-button

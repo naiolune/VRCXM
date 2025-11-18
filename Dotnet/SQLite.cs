@@ -26,7 +26,7 @@ namespace VRCX
 
         public void Init()
         {
-#if LINUX
+#if LINUX || ELECTRON
             Instance = this;
 #endif
             var dataSource = Program.ConfigLocation;

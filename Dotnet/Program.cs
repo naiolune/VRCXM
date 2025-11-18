@@ -104,7 +104,7 @@ namespace VRCX
             });
         }
 
-#if !LINUX
+#if !LINUX && !ELECTRON
         [STAThread]
         [SuppressMessage("Interoperability", "CA1416:Validate platform compatibility")]
         private static void Main()
@@ -167,7 +167,7 @@ namespace VRCX
                     e, "Database error", MessageBoxButtons.YesNo, MessageBoxIcon.Error);
                 if (messageBoxResult == DialogResult.Yes)
                 {
-                    AppApiInstance.OpenLink("https://github.com/vrcx-team/VRCX/wiki#how-to-repair-vrcx-database");
+                    AppApiInstance.OpenLink("https://github.com/naiolune/VRCXM/wiki#how-to-repair-vrcx-database");
                 }
             }
 
@@ -275,7 +275,7 @@ namespace VRCX
 #endif
     }
 
-#if LINUX
+#if LINUX || ELECTRON
     public class ProgramElectron
     {
         public void PreInit(string version, string[] args)

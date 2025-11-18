@@ -625,21 +625,83 @@
     }
     
     .search-input {
-        flex: 1;
-        min-width: 0;
+        min-width: 200px;
+        max-width: 280px;
+        flex: 0 1 280px;
+        width: 280px;
         
         :deep(.el-input__wrapper) {
             padding-left: 12px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
         }
         
-        // Dark theme input prefix
-        .dark :deep(.el-input__prefix) {
-            color: rgba(255, 255, 255, 0.5);
+        // Dark theme input styling
+        .dark :deep(.el-input__wrapper) {
+            background: rgba(20, 22, 32, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 0 16px;
+            
+            .el-input__inner {
+                color: rgba(255, 255, 255, 0.95);
+                font-size: 14px;
+                
+                &::placeholder {
+                    color: rgba(255, 255, 255, 0.5);
+                }
+            }
+
+            .el-input__prefix {
+                color: rgba(255, 255, 255, 0.6);
+                margin-right: 8px;
+            }
+            
+            &:hover {
+                background: rgba(20, 22, 32, 0.9);
+                border-color: rgba(255, 255, 255, 0.2);
+            }
+            
+            &.is-focus {
+                background: rgba(20, 22, 32, 0.95);
+                border-color: rgba(255, 255, 255, 0.25);
+                box-shadow: 
+                    0 0 0 2px rgba(255, 255, 255, 0.1),
+                    0 4px 12px rgba(0, 0, 0, 0.15);
+            }
         }
 
-        // Light theme input prefix
-        html:not(.dark) :deep(.el-input__prefix) {
-            color: #999999;
+        // Light theme input styling
+        html:not(.dark) :deep(.el-input__wrapper) {
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            padding: 0 16px;
+            
+            .el-input__inner {
+                color: #333333;
+                font-size: 14px;
+                
+                &::placeholder {
+                    color: #999999;
+                }
+            }
+
+            .el-input__prefix {
+                color: #666666;
+                margin-right: 8px;
+            }
+            
+            &:hover {
+                background: #f5f5f5;
+                border-color: #d0d0d0;
+            }
+            
+            &.is-focus {
+                background: #ffffff;
+                border-color: #409eff;
+                box-shadow: 
+                    0 0 0 2px rgba(64, 158, 255, 0.1),
+                    0 4px 12px rgba(0, 0, 0, 0.1);
+            }
         }
     }
     

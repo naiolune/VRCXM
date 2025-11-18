@@ -570,7 +570,7 @@
         display: flex;
         align-items: center;
         gap: 12px;
-        flex: 1;
+        flex: 0 1 auto;
         justify-content: flex-end;
         min-width: 0;
         overflow: hidden;
@@ -600,10 +600,9 @@
     }
 
     .feed-search-input {
-        min-width: 200px;
+        width: 280px;
+        flex: 0 0 280px;
         max-width: 280px;
-        flex: 0 1 280px;
-        min-width: 0;
     }
 
     .feed-table-wrapper {
@@ -964,14 +963,26 @@
         }
 
         .controls-right {
-            flex-direction: column;
+            flex-direction: row;
             width: 100%;
+            flex-wrap: wrap;
+        }
+
+        .feed-date-picker {
+            width: 100%;
+            max-width: 100%;
+            min-width: unset;
         }
 
         .feed-filter-select,
         .feed-search-input {
-            width: 100%;
-            min-width: unset;
+            flex: 0 0 auto;
+            width: auto;
+        }
+        
+        .feed-search-input {
+            width: 280px;
+            max-width: 280px;
         }
     }
 

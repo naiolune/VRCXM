@@ -94,7 +94,9 @@ export const useFriendStore = defineStore('Friend', () => {
             small: true,
             layout: 'sizes,prev,pager,next,total',
             pageSizes: [10, 15, 20, 25, 50, 100]
-        }
+        },
+        vip: false,
+        dateRange: null
     });
 
     const vipFriends = computed(() => {
@@ -211,9 +213,53 @@ export const useFriendStore = defineStore('Friend', () => {
             await configRepository.getString('VRCX_friendLogTableFilters', '[]')
         );
         friendLogTable.value.filters[0].value = friendLogTableFiltersValue;
+        friendLogTable.value.vip = await configRepository.getBool(
+            'VRCX_friendLogTableVIPFilter',
+            false
+        );
+        const dateRangeStr = await configRepository.getString('VRCX_friendLogTableDateRange', '');
+        if (dateRangeStr) {
+            try {
+                friendLogTable.value.dateRange = JSON.parse(dateRangeStr);
+            } catch (e) {
+                friendLogTable.value.dateRange = null;
+            }
+        }
     }
 
     init();
+
+    async function friendLogTableLookup() {
+        await configRepository.setString(
+            'VRCX_friendLogTableFilters',
+            JSON.stringify(friendLogTable.value.filters[0].value)
+        );
+        await configRepository.setBool(
+            'VRCX_friendLogTableVIPFilter',
+            friendLogTable.value.vip
+        );
+        if (friendLogTable.value.dateRange) {
+            await configRepository.setString(
+                'VRCX_friendLogTableDateRange',
+                JSON.stringify(friendLogTable.value.dateRange)
+            );
+        } else {
+            await configRepository.setString('VRCX_friendLogTableDateRange', '');
+        }
+        
+        friendLogTable.value.loading = true;
+        let vipList = [];
+        if (friendLogTable.value.vip) {
+            vipList = Array.from(localFavoriteFriends.values());
+        }
+        friendLogTable.value.data = await database.lookupFriendLogHistory(
+            friendLogTable.value.filters[1].value,
+            friendLogTable.value.filters[0].value,
+            vipList,
+            friendLogTable.value.dateRange
+        );
+        friendLogTable.value.loading = false;
+    }
 
     function updateUserCurrentStatus(ref) {
         if (watchState.isFriendsLoaded) {
@@ -1642,6 +1688,7 @@ export const useFriendStore = defineStore('Friend', () => {
         updateFriendships,
         updateUserCurrentStatus,
         handleFriendAdd,
-        handleFriendDelete
+        handleFriendDelete,
+        friendLogTableLookup
     };
 });

@@ -6,7 +6,7 @@
                 <div class="x-friend-item" style="cursor: default">
                     <div class="detail">
                         <span class="name">{{ t('view.settings.general.general.version') }}</span>
-                        <span class="extra" v-text="appVersion"></span>
+                        <span class="extra" v-text="currentVersion"></span>
                     </div>
                 </div>
                 <div class="x-friend-item" @click="checkForVRCXUpdate">
@@ -30,11 +30,10 @@
                         <span v-once class="extra">https://github.com/naiolune/VRCXM/issues</span>
                     </div>
                 </div>
-                <div class="x-friend-item" @click="handleLogout" style="cursor: pointer">
-                    <div class="detail">
-                        <span class="name">{{ t('view.settings.general.general.logout') }}</span>
-                        <span class="extra logout-description">{{ t('view.settings.general.general.logout_description') }}</span>
-                    </div>
+                <div class="options-container-item" style="margin-top: 15px">
+                    <el-button type="danger" @click="handleLogout" style="width: 100%">
+                        {{ t('view.settings.general.general.logout') }}
+                    </el-button>
                 </div>
             </div>
         </div>
@@ -438,7 +437,7 @@
 
     const { favoriteFriendGroups } = storeToRefs(favoriteStore);
 
-    const { appVersion, autoUpdateVRCX, latestAppVersion } = storeToRefs(vrcxUpdaterStore);
+    const { appVersion, currentVersion, autoUpdateVRCX, latestAppVersion } = storeToRefs(vrcxUpdaterStore);
     const { setAutoUpdateVRCX, checkForVRCXUpdate, showVRCXUpdateDialog, showChangeLogDialog } = vrcxUpdaterStore;
 
     const instanceTypes = ref([

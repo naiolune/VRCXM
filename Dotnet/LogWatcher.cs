@@ -14,7 +14,7 @@ using System.Text.Json;
 using System.Threading;
 using NLog;
 
-#if !LINUX
+#if !LINUX && !ELECTRON
 using CefSharp;
 #endif
 
@@ -54,6 +54,8 @@ namespace VRCX
             m_LogContextMap = new Dictionary<string, LogContext>();
             m_LogListLock = new ReaderWriterLockSlim();
             m_LogList = new List<string[]>();
+            logger.Info("LogWatcher.Init: Initialized - logPath={0}", m_LogDirectoryInfo.FullName);
+            System.Console.WriteLine($"[LogWatcher] Init: logPath={m_LogDirectoryInfo.FullName}");
             m_Thread = new Thread(ThreadLoop)
             {
                 IsBackground = true
@@ -81,6 +83,7 @@ namespace VRCX
             tillDate = DateTime.Parse(date, CultureInfo.InvariantCulture, DateTimeStyles.None).ToUniversalTime();
             threadActive = true;
             logger.Info("SetDateTill: {0}", tillDate.ToLocalTime());
+            System.Console.WriteLine($"[LogWatcher] SetDateTill: {tillDate.ToLocalTime()}, threadActive={threadActive}");
         }
 
         private void ThreadLoop()
@@ -121,16 +124,29 @@ namespace VRCX
                 }
             }
 
+            if (!threadActive)
+            {
+                logger.Debug("Update: threadActive=False, skipping update");
+                return;
+            }
+
             var deletedNameSet = new HashSet<string>(m_LogContextMap.Keys);
             m_LogDirectoryInfo.Refresh();
+            
+            logger.Debug("Update: Starting - threadActive={0}, tillDate={1}, m_FirstRun={2}, directory exists={3}", 
+                threadActive, tillDate, m_FirstRun, m_LogDirectoryInfo.Exists);
 
             if ((m_LogDirectoryInfo.LinkTarget == null && m_LogDirectoryInfo.Exists) || Directory.Exists(m_LogDirectoryInfo.LinkTarget))
             {
                 var fileInfos = m_LogDirectoryInfo.GetFiles("output_log_*.txt", SearchOption.TopDirectoryOnly);
+                
+                logger.Debug("Update: Found {0} log files in directory", fileInfos.Length);
 
                 // sort by creation time
                 Array.Sort(fileInfos, (a, b) => a.CreationTimeUtc.CompareTo(b.CreationTimeUtc));
 
+                var filesToParse = 0;
+                var filesSkipped = 0;
                 foreach (var fileInfo in fileInfos)
                 {
                     fileInfo.Refresh();
@@ -138,7 +154,16 @@ namespace VRCX
                         continue;
 
                     if (DateTime.Compare(fileInfo.LastWriteTimeUtc, tillDate) < 0)
+                    {
+                        filesSkipped++;
+                        if (filesSkipped <= 3) // Only log first 3 skipped files to avoid spam
+                        {
+                            logger.Debug("Update: Skipping file {0} - LastWriteTimeUtc {1} < tillDate {2}", 
+                                fileInfo.Name, fileInfo.LastWriteTimeUtc, tillDate);
+                        }
                         continue;
+                    }
+                    filesToParse++;
 
                     if (m_LogContextMap.TryGetValue(fileInfo.Name, out var logContext))
                     {
@@ -156,6 +181,15 @@ namespace VRCX
                     logContext.Length = fileInfo.Length;
                     ParseLog(fileInfo, logContext);
                 }
+                
+                if (filesToParse > 0 || filesSkipped > 0)
+                {
+                    logger.Debug("Update: Processed {0} files to parse, {1} files skipped (older than tillDate)", filesToParse, filesSkipped);
+                }
+            }
+            else
+            {
+                logger.Debug("Update: Log directory does not exist or is invalid: {0}", m_LogDirectoryInfo.FullName);
             }
 
             foreach (var name in deletedNameSet)
@@ -163,6 +197,36 @@ namespace VRCX
                 m_LogContextMap.Remove(name);
             }
 
+            // For Electron builds, queue all events from m_LogList after first run completes
+#if LINUX || ELECTRON
+            if (m_FirstRun)
+            {
+                logger.Info("Update: First run complete - m_LogList.Count={0}, threadActive={1}", m_LogList.Count, threadActive);
+                System.Console.WriteLine($"[LogWatcher] Update: First run complete - m_LogList.Count={m_LogList.Count}, threadActive={threadActive}");
+                if (m_LogList.Count > 0)
+                {
+                    m_LogListLock.EnterReadLock();
+                    try
+                    {
+                        foreach (var item in m_LogList)
+                        {
+                            var logLine = JsonSerializer.Serialize(item);
+                            m_LogQueue.Enqueue(logLine);
+                        }
+                        logger.Info("Update: Queued {0} events to m_LogQueue (new length={1})", m_LogList.Count, m_LogQueue.Count);
+                        System.Console.WriteLine($"[LogWatcher] Update: ✅ Queued {m_LogList.Count} events to m_LogQueue after first run (queue length={m_LogQueue.Count})");
+                    }
+                    finally
+                    {
+                        m_LogListLock.ExitReadLock();
+                    }
+                }
+                else
+                {
+                    System.Console.WriteLine($"[LogWatcher] Update: ⚠️ First run complete but m_LogList is empty - no events to queue");
+                }
+            }
+#endif
             m_FirstRun = false;
         }
 
@@ -174,23 +238,49 @@ namespace VRCX
         private void ParseLog(FileInfo fileInfo, LogContext logContext)
         {
             var line = string.Empty;
+            var linesRead = 0;
+            var joinLeaveLinesFound = 0;
+            var eventsAdded = 0;
             try
             {
                 using var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 65536, FileOptions.SequentialScan);
                 stream.Position = logContext.Position;
+                var initialPosition = stream.Position;
                 using var streamReader = new StreamReader(stream, Encoding.UTF8);
+                        logger.Debug("ParseLog: Starting parse of {0}, position: {1}, tillDate: {2}", fileInfo.Name, initialPosition, tillDate);
+                        System.Console.WriteLine($"[LogWatcher] ParseLog: Starting parse of {fileInfo.Name}, position: {initialPosition}, tillDate: {tillDate}");
                 while (true)
                 {
                     line = streamReader.ReadLine();
                     if (line == null)
                     {
                         logContext.Position = stream.Position;
+                        logger.Debug("ParseLog: Finished parsing {0}, read {1} lines, found {2} join/leave lines, final position: {3}", 
+                            fileInfo.Name, linesRead, joinLeaveLinesFound, stream.Position);
+                        if (joinLeaveLinesFound > 0)
+                        {
+                            System.Console.WriteLine($"[LogWatcher] ParseLog: Finished parsing {fileInfo.Name}, read {linesRead} lines, found {joinLeaveLinesFound} join/leave lines, final position: {stream.Position}");
+                        }
                         break;
                     }
+
+                    linesRead++;
 
                     if (line.Length == 0)
                     {
                         continue;
+                    }
+
+                    // Check if this line contains join/leave events
+                    var isJoinLeaveLine = line.Contains("[Behaviour] OnPlayerJoined") || 
+                                         line.Contains("[NetworkManager] OnPlayerJoined") ||
+                                         line.Contains("[Behaviour] OnPlayerLeft") || 
+                                         line.Contains("[NetworkManager] OnPlayerLeft");
+                    if (isJoinLeaveLine)
+                    {
+                        joinLeaveLinesFound++;
+                        logger.Debug("ParseLog: Found join/leave line #{0} in {1}: {2}", joinLeaveLinesFound, fileInfo.Name, line.Length > 100 ? line.Substring(0, 100) + "..." : line);
+                        System.Console.WriteLine($"[LogWatcher] Found join/leave line #{joinLeaveLinesFound} in {fileInfo.Name}: {(line.Length > 100 ? line.Substring(0, 100) + "..." : line)}");
                     }
 
                     // 2020.10.31 23:36:28 Log        -  [VRCFlowManagerVRC] Destination fetching: wrld_4432ea9b-729c-46e3-8eaf-846aa0a37fdd
@@ -202,6 +292,11 @@ namespace VRCX
                     if (line.Length <= 36 ||
                         line[31] != '-')
                     {
+                        if (isJoinLeaveLine)
+                        {
+                            logger.Debug("ParseLog: Join/leave line failed length/format check: length={0}, char[31]='{1}'", 
+                                line.Length, line.Length > 31 ? line[31].ToString() : "N/A");
+                        }
                         continue;
                     }
 
@@ -217,26 +312,61 @@ namespace VRCX
                         // check if date is older than last database entry
                         if (DateTime.Compare(lineDate, tillDate) <= 0)
                         {
-                            // logger.Warn("Invalid log time, too old: {0}", line);
+                            if (isJoinLeaveLine)
+                            {
+                                logger.Info("ParseLog: JOIN/LEAVE LINE FILTERED BY DATE - lineDate: {0}, tillDate: {1}, diff: {2}ms, line: {3}", 
+                                    lineDate, tillDate, (tillDate - lineDate).TotalMilliseconds, line.Length > 100 ? line.Substring(0, 100) + "..." : line);
+                                System.Console.WriteLine($"[LogWatcher] ⚠️ JOIN/LEAVE LINE FILTERED BY DATE - lineDate: {lineDate}, tillDate: {tillDate}, diff: {(tillDate - lineDate).TotalMilliseconds}ms, line: {(line.Length > 100 ? line.Substring(0, 100) + "..." : line)}");
+                            }
+                            // Skip old logs silently
                             continue;
                         }
                         // check if datetime is over an hour into the future (compensate for gamelog not handling daylight savings time correctly)
                         if (DateTime.UtcNow.AddMinutes(61) < lineDate)
                         {
                             logger.Warn("Invalid log time, too new: {0}", line);
+                            if (isJoinLeaveLine)
+                            {
+                                logger.Info("ParseLog: JOIN/LEAVE LINE FILTERED - date too new: {0}, line: {1}", lineDate, line.Length > 100 ? line.Substring(0, 100) + "..." : line);
+                            }
                             continue;
+                        }
+                        
+                        if (isJoinLeaveLine)
+                        {
+                            logger.Debug("ParseLog: Join/leave line passed date filter - lineDate: {0}, tillDate: {1}, diff: {2}ms", 
+                                lineDate, tillDate, (lineDate - tillDate).TotalMilliseconds);
+                            System.Console.WriteLine($"[LogWatcher] Join/leave line passed date filter - lineDate: {lineDate}, tillDate: {tillDate}, diff: {(lineDate - tillDate).TotalMilliseconds}ms");
                         }
                     }
                     else
                     {
                         logger.Warn("Failed to parse log date: {0}", line);
+                        if (isJoinLeaveLine)
+                        {
+                            logger.Info("ParseLog: JOIN/LEAVE LINE FAILED DATE PARSING: {0}", line.Length > 100 ? line.Substring(0, 100) + "..." : line);
+                        }
                         continue;
                     }
 
                     var offset = 34;
                     if (line[offset] == '[')
                     {
-                        if (ParseLogOnPlayerJoinedOrLeft(fileInfo, logContext, line, offset) ||
+                        if (isJoinLeaveLine)
+                        {
+                            logger.Debug("ParseLog: Join/leave line reached parser, offset: {0}, calling ParseLogOnPlayerJoinedOrLeft", offset);
+                            System.Console.WriteLine($"[LogWatcher] Join/leave line reached parser, offset: {offset}, calling ParseLogOnPlayerJoinedOrLeft");
+                        }
+                        var parsed = ParseLogOnPlayerJoinedOrLeft(fileInfo, logContext, line, offset);
+                        if (parsed)
+                        {
+                            eventsAdded++;
+                            if (isJoinLeaveLine)
+                            {
+                                logger.Debug("ParseLog: ParseLogOnPlayerJoinedOrLeft returned: {0}, eventsAdded={1}", parsed, eventsAdded);
+                            }
+                        }
+                        if (parsed ||
                             ParseLogLocation(fileInfo, logContext, line, offset) ||
                             ParseLogLocationDestination(fileInfo, logContext, line, offset) ||
                             ParseLogPortalSpawn(fileInfo, logContext, line, offset) ||
@@ -283,25 +413,61 @@ namespace VRCX
             {
                 logger.Warn(ex, "Failed to parse log file: {0} {1} {2}", fileInfo.FullName, line, ex.Message);
             }
+            
+            if (linesRead > 0 || eventsAdded > 0)
+            {
+                logger.Debug("ParseLog: Finished parsing {0} - linesRead={1}, eventsAdded={2}, joinLeaveLinesFound={3}, newPosition={4}", 
+                    fileInfo.Name, linesRead, eventsAdded, joinLeaveLinesFound, logContext.Position);
+            }
         }
 
         private void AppendLog(string[] item)
         {
+            var eventType = item.Length > 2 ? item[2] : "unknown";
+            var isJoinLeave = eventType == "player-joined" || eventType == "player-left";
+            
+            if (isJoinLeave)
+            {
+                logger.Info("AppendLog: Appending {0} event - m_FirstRun={1}, m_LogList.Count={2}, item length={3}", 
+                    eventType, m_FirstRun, m_LogList.Count, item.Length);
+                System.Console.WriteLine($"[LogWatcher] AppendLog: Appending {eventType} event - m_FirstRun={m_FirstRun}, m_LogList.Count={m_LogList.Count}, item length={item.Length}");
+            }
+            
             m_LogListLock.EnterWriteLock();
             try
             {
                 if (!m_FirstRun)
                 {
                     var logLine = JsonSerializer.Serialize(item);
-#if LINUX
+#if LINUX || ELECTRON
                     m_LogQueue.Enqueue(logLine);
+                    if (isJoinLeave)
+                    {
+                        logger.Info("AppendLog: Enqueued {0} event to m_LogQueue (length={1})", eventType, m_LogQueue.Count);
+                        System.Console.WriteLine($"[LogWatcher] AppendLog: ✅ Enqueued {eventType} event to m_LogQueue (length={m_LogQueue.Count})");
+                    }
 #else
                     if (MainForm.Instance != null && MainForm.Instance.Browser != null)
                         MainForm.Instance.Browser.ExecuteScriptAsync("window?.$pinia?.gameLog.addGameLogEvent", logLine);
+                    if (isJoinLeave)
+                    {
+                        logger.Info("AppendLog: Sent {0} event to CEF browser", eventType);
+                    }
 #endif
+                }
+                else
+                {
+                    if (isJoinLeave)
+                    {
+                        logger.Info("AppendLog: m_FirstRun=true, event will only be added to m_LogList, not queued");
+                    }
                 }
 
                 m_LogList.Add(item);
+                if (isJoinLeave)
+                {
+                    logger.Info("AppendLog: {0} event added to m_LogList (new count={1})", eventType, m_LogList.Count);
+                }
             }
             finally
             {
@@ -313,8 +479,43 @@ namespace VRCX
         {
             // for electron
             var logLines = new List<string>();
+            var joinLeaveCount = 0;
+            var locationCount = 0;
+            var otherCount = 0;
+            var queueSizeBefore = m_LogQueue.Count;
+            var m_FirstRunSnapshot = m_FirstRun;
+            
             while (m_LogQueue.TryDequeue(out var logLine))
+            {
                 logLines.Add(logLine);
+                // Check event type
+                try
+                {
+                    var parsed = JsonSerializer.Deserialize<string[]>(logLine);
+                    if (parsed != null && parsed.Length > 2)
+                    {
+                        var eventType = parsed[2];
+                        if (eventType == "player-joined" || eventType == "player-left")
+                            joinLeaveCount++;
+                        else if (eventType == "location")
+                            locationCount++;
+                        else
+                            otherCount++;
+                    }
+                }
+                catch
+                {
+                    // Ignore parse errors
+                }
+            }
+            
+            // Always log GetLogLines to help debug empty queue issue
+            logger.Debug("LogWatcher.GetLogLines: Queue size before={0}, m_FirstRun={1}, threadActive={2}, returning {3} log lines (join/leave={4}, location={5}, other={6})", 
+                queueSizeBefore, m_FirstRunSnapshot, threadActive, logLines.Count, joinLeaveCount, locationCount, otherCount);
+            if (logLines.Count > 0 || queueSizeBefore > 0 || queueSizeBefore == 0)
+            {
+                System.Console.WriteLine($"[LogWatcher] GetLogLines: Queue size before={queueSizeBefore}, m_FirstRun={m_FirstRunSnapshot}, threadActive={threadActive}, returning {logLines.Count} log lines (join/leave={joinLeaveCount}, location={locationCount}, other={otherCount})");
+            }
 
             return logLines;
         }
@@ -479,62 +680,110 @@ namespace VRCX
 
             // Future logs will be formatted like this: [Behaviour] OnPlayerJoined Natsumi-sama (usr_032383a7-748c-4fb2-94e4-bcb928e5de6b)
 
-            if (line.Contains("[Behaviour] OnPlayerJoined") && !line.Contains("] OnPlayerJoined:"))
-            {
-                var lineOffset = line.LastIndexOf("] OnPlayerJoined", StringComparison.Ordinal);
-                if (lineOffset < 0)
-                    return true;
-                lineOffset += 17;
-                if (lineOffset > line.Length)
-                    return true;
+            var hasJoined = line.Contains("[Behaviour] OnPlayerJoined") || line.Contains("[NetworkManager] OnPlayerJoined");
+            var hasLeft = line.Contains("[Behaviour] OnPlayerLeft") || line.Contains("[NetworkManager] OnPlayerLeft");
+            var hasJoinedColon = line.Contains("] OnPlayerJoined:");
+            var hasLeftRoom = line.Contains("] OnPlayerLeftRoom");
+            var hasLeftColon = line.Contains("] OnPlayerLeft:");
 
-                var userInfo = ParseUserInfo(line.Substring(lineOffset));
-                if (string.IsNullOrEmpty(userInfo.DisplayName) && string.IsNullOrEmpty(userInfo.UserId))
+            logger.Debug("ParseLogOnPlayerJoinedOrLeft: hasJoined={0}, hasLeft={1}, hasJoinedColon={2}, hasLeftRoom={3}, hasLeftColon={4}", 
+                hasJoined, hasLeft, hasJoinedColon, hasLeftRoom, hasLeftColon);
+
+            if (hasJoined && !hasJoinedColon)
+            {
+                logger.Info("ParseLogOnPlayerJoinedOrLeft: PROCESSING JOIN EVENT - line: {0}", line.Length > 150 ? line.Substring(0, 150) + "..." : line);
+                System.Console.WriteLine($"[LogWatcher] 🔵 PROCESSING JOIN EVENT: {(line.Length > 150 ? line.Substring(0, 150) + "..." : line)}");
+                var lineOffset = line.LastIndexOf("] OnPlayerJoined", StringComparison.Ordinal);
+                logger.Debug("ParseLogOnPlayerJoinedOrLeft: lineOffset={0}, line.Length={1}", lineOffset, line.Length);
+                if (lineOffset < 0)
                 {
-                    logger.Warn("Failed to parse user info from log line: {0}", line);
+                    logger.Warn("ParseLogOnPlayerJoinedOrLeft: lineOffset < 0, returning true");
                     return true;
                 }
+                lineOffset += 17;
+                if (lineOffset > line.Length)
+                {
+                    logger.Warn("ParseLogOnPlayerJoinedOrLeft: lineOffset > line.Length ({0} > {1}), returning true", lineOffset, line.Length);
+                    return true;
+                }
+
+                var userInfoString = line.Substring(lineOffset);
+                logger.Debug("ParseLogOnPlayerJoinedOrLeft: userInfoString='{0}'", userInfoString);
+                var userInfo = ParseUserInfo(userInfoString);
+                logger.Debug("ParseLogOnPlayerJoinedOrLeft: Parsed userInfo - DisplayName='{0}', UserId='{1}'", userInfo.DisplayName, userInfo.UserId);
+                
+                if (string.IsNullOrEmpty(userInfo.DisplayName) && string.IsNullOrEmpty(userInfo.UserId))
+                {
+                    logger.Warn("ParseLogOnPlayerJoinedOrLeft: Failed to parse user info from log line: {0}", line);
+                    return true;
+                }
+
+                var timestamp = ConvertLogTimeToISO8601(line);
+                logger.Info("ParseLogOnPlayerJoinedOrLeft: SUCCESS - Appending player-joined event: DisplayName='{0}', UserId='{1}', timestamp='{2}'", 
+                    userInfo.DisplayName, userInfo.UserId, timestamp);
+                System.Console.WriteLine($"[LogWatcher] ✅ SUCCESS - Appending player-joined: DisplayName='{userInfo.DisplayName}', UserId='{userInfo.UserId}', timestamp='{timestamp}'");
 
                 AppendLog(new[]
                 {
                     fileInfo.Name,
-                    ConvertLogTimeToISO8601(line),
+                    timestamp,
                     "player-joined",
                     userInfo.DisplayName ?? string.Empty,
                     userInfo.UserId ?? string.Empty
                 });
 
+                logger.Info("ParseLogOnPlayerJoinedOrLeft: player-joined event appended successfully");
                 return true;
             }
 
-            if (line.Contains("[Behaviour] OnPlayerLeft") && !line.Contains("] OnPlayerLeftRoom") && !line.Contains("] OnPlayerLeft:"))
+            if (hasLeft && !hasLeftRoom && !hasLeftColon)
             {
+                logger.Info("ParseLogOnPlayerLeft: PROCESSING LEFT EVENT - line: {0}", line.Length > 150 ? line.Substring(0, 150) + "..." : line);
+                System.Console.WriteLine($"[LogWatcher] 🔴 PROCESSING LEFT EVENT: {(line.Length > 150 ? line.Substring(0, 150) + "..." : line)}");
                 var lineOffset = line.LastIndexOf("] OnPlayerLeft", StringComparison.Ordinal);
+                logger.Debug("ParseLogOnPlayerLeft: lineOffset={0}, line.Length={1}", lineOffset, line.Length);
                 if (lineOffset < 0)
-                    return true;
-                lineOffset += 15;
-                if (lineOffset > line.Length)
-                    return true;
-
-                var userInfo = ParseUserInfo(line.Substring(lineOffset));
-                if (string.IsNullOrEmpty(userInfo.DisplayName) && string.IsNullOrEmpty(userInfo.UserId))
                 {
-                    logger.Warn("Failed to parse user info from log line: {0}", line);
+                    logger.Warn("ParseLogOnPlayerLeft: lineOffset < 0, returning true");
                     return true;
                 }
+                lineOffset += 15;
+                if (lineOffset > line.Length)
+                {
+                    logger.Warn("ParseLogOnPlayerLeft: lineOffset > line.Length ({0} > {1}), returning true", lineOffset, line.Length);
+                    return true;
+                }
+
+                var userInfoString = line.Substring(lineOffset);
+                logger.Debug("ParseLogOnPlayerLeft: userInfoString='{0}'", userInfoString);
+                var userInfo = ParseUserInfo(userInfoString);
+                logger.Debug("ParseLogOnPlayerLeft: Parsed userInfo - DisplayName='{0}', UserId='{1}'", userInfo.DisplayName, userInfo.UserId);
+                
+                if (string.IsNullOrEmpty(userInfo.DisplayName) && string.IsNullOrEmpty(userInfo.UserId))
+                {
+                    logger.Warn("ParseLogOnPlayerLeft: Failed to parse user info from log line: {0}", line);
+                    return true;
+                }
+
+                var timestamp = ConvertLogTimeToISO8601(line);
+                logger.Info("ParseLogOnPlayerLeft: SUCCESS - Appending player-left event: DisplayName='{0}', UserId='{1}', timestamp='{2}'", 
+                    userInfo.DisplayName, userInfo.UserId, timestamp);
+                System.Console.WriteLine($"[LogWatcher] ✅ SUCCESS - Appending player-left: DisplayName='{userInfo.DisplayName}', UserId='{userInfo.UserId}', timestamp='{timestamp}'");
 
                 AppendLog(new[]
                 {
                     fileInfo.Name,
-                    ConvertLogTimeToISO8601(line),
+                    timestamp,
                     "player-left",
                     userInfo.DisplayName ?? string.Empty,
                     userInfo.UserId ?? string.Empty
                 });
 
+                logger.Info("ParseLogOnPlayerLeft: player-left event appended successfully");
                 return true;
             }
 
+            logger.Debug("ParseLogOnPlayerJoinedOrLeft: No match found, returning false");
             return false;
         }
 
@@ -1372,6 +1621,10 @@ namespace VRCX
 
         public string[][] Get()
         {
+            logger.Debug("LogWatcher.Get: Called - m_ResetLog={0}, m_LogList.Count={1}, m_FirstRun={2}", 
+                m_ResetLog, m_LogList.Count, m_FirstRun);
+            System.Console.WriteLine($"[LogWatcher] Get: Called - m_ResetLog={m_ResetLog}, m_LogList.Count={m_LogList.Count}, m_FirstRun={m_FirstRun}");
+            
             Update();
 
             if (m_ResetLog == false &&
@@ -1386,14 +1639,51 @@ namespace VRCX
                     {
                         items = new string[1000][];
                         m_LogList.CopyTo(0, items, 0, 1000);
+                        
+                        // Count join/leave events in the batch
+                        var joinLeaveCount = 0;
+                        for (int i = 0; i < items.Length && i < 1000; i++)
+                        {
+                            if (items[i].Length > 2 && (items[i][2] == "player-joined" || items[i][2] == "player-left"))
+                                joinLeaveCount++;
+                        }
+                        if (joinLeaveCount > 0)
+                        {
+                            logger.Info("LogWatcher.Get: Returning {0} items (first 1000), {1} are join/leave events", items.Length, joinLeaveCount);
+                        }
+                        
                         m_LogList.RemoveRange(0, 1000);
                     }
                     else
                     {
                         items = m_LogList.ToArray();
+                        
+                        // Count join/leave events
+                        var joinLeaveCount = 0;
+                        for (int i = 0; i < items.Length; i++)
+                        {
+                            if (items[i].Length > 2 && (items[i][2] == "player-joined" || items[i][2] == "player-left"))
+                                joinLeaveCount++;
+                        }
+                        if (joinLeaveCount > 0)
+                        {
+                            logger.Info("LogWatcher.Get: Returning {0} items (all), {1} are join/leave events", items.Length, joinLeaveCount);
+                            System.Console.WriteLine($"[LogWatcher] Get: ✅ Returning {items.Length} items (all), {joinLeaveCount} are join/leave events");
+                            for (int i = 0; i < items.Length; i++)
+                            {
+                                if (items[i].Length > 2 && (items[i][2] == "player-joined" || items[i][2] == "player-left"))
+                                {
+                                    logger.Info("LogWatcher.Get: Item {0}: type={1}, displayName={2}, userId={3}, timestamp={4}", 
+                                        i, items[i][2], items[i].Length > 3 ? items[i][3] : "N/A", items[i].Length > 4 ? items[i][4] : "N/A", items[i].Length > 1 ? items[i][1] : "N/A");
+                                    System.Console.WriteLine($"[LogWatcher] Get: Item {i}: type={items[i][2]}, displayName={(items[i].Length > 3 ? items[i][3] : "N/A")}, userId={(items[i].Length > 4 ? items[i][4] : "N/A")}, timestamp={(items[i].Length > 1 ? items[i][1] : "N/A")}");
+                                }
+                            }
+                        }
+                        
                         m_LogList.Clear();
                     }
 
+                    logger.Debug("LogWatcher.Get: Returning {0} items, m_LogList.Count after clear={1}", items.Length, m_LogList.Count);
                     return items;
                 }
                 finally
@@ -1402,6 +1692,8 @@ namespace VRCX
                 }
             }
 
+            logger.Debug("LogWatcher.Get: Returning empty array - m_ResetLog={0}, m_LogList.Count={1}", m_ResetLog, m_LogList.Count);
+            System.Console.WriteLine($"[LogWatcher] Get: Returning empty array - m_ResetLog={m_ResetLog}, m_LogList.Count={m_LogList.Count}");
             return new string[][] { };
         }
 

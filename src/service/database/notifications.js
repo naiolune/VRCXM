@@ -105,6 +105,67 @@ const notifications = {
                 '@expired': expired
             }
         );
+    },
+
+    async lookupNotifications(search, filters, dateRange = null) {
+        var search = search.replaceAll("'", "''");
+        
+        let dateRangeFilter = '';
+        if (dateRange && Array.isArray(dateRange) && dateRange.length === 2) {
+            const startDate = dateRange[0] ? new Date(dateRange[0]).toISOString() : null;
+            const endDate = dateRange[1] ? new Date(dateRange[1]).toISOString() : null;
+            if (startDate && endDate) {
+                dateRangeFilter = `AND created_at >= '${startDate}' AND created_at <= '${endDate}'`;
+            } else if (startDate) {
+                dateRangeFilter = `AND created_at >= '${startDate}'`;
+            } else if (endDate) {
+                dateRangeFilter = `AND created_at <= '${endDate}'`;
+            }
+        }
+
+        var typeFilter = '';
+        if (filters.length > 0) {
+            typeFilter = "AND type IN (";
+            for (var i = 0; i < filters.length; i++) {
+                typeFilter += `'${filters[i].replaceAll("'", "''")}'`;
+                if (i < filters.length - 1) {
+                    typeFilter += ', ';
+                }
+            }
+            typeFilter += ')';
+        }
+
+        var searchQuery = '';
+        if (search) {
+            searchQuery = `AND (sender_username LIKE '%${search}%' OR message LIKE '%${search}%')`;
+        }
+
+        var notifications = [];
+        await sqliteService.execute((dbRow) => {
+            var row = {
+                id: dbRow[0],
+                created_at: dbRow[1],
+                type: dbRow[2],
+                senderUserId: dbRow[3],
+                senderUsername: dbRow[4],
+                receiverUserId: dbRow[5],
+                message: dbRow[6],
+                details: {
+                    worldId: dbRow[7],
+                    worldName: dbRow[8],
+                    imageUrl: dbRow[9],
+                    inviteMessage: dbRow[10],
+                    requestMessage: dbRow[11],
+                    responseMessage: dbRow[12]
+                }
+            };
+            row.$isExpired = false;
+            if (dbRow[13] === 1) {
+                row.$isExpired = true;
+            }
+            notifications.unshift(row);
+        }, `SELECT * FROM ${dbVars.userPrefix}_notifications WHERE 1=1 ${typeFilter} ${searchQuery} ${dateRangeFilter} ORDER BY created_at DESC LIMIT ${dbVars.maxTableSize}`);
+        return notifications;
     }
 };
 

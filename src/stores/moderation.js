@@ -5,6 +5,7 @@ import { avatarModerationRequest, playerModerationRequest } from '../api';
 import { useAvatarStore } from './avatar';
 import { useUserStore } from './user';
 import { watchState } from '../service/watchState';
+import configRepository from '../service/config.js';
 
 export const useModerationStore = defineStore('Moderation', () => {
     const avatarStore = useAvatarStore();
@@ -40,7 +41,8 @@ export const useModerationStore = defineStore('Moderation', () => {
             small: true,
             layout: 'sizes,prev,pager,next,total',
             pageSizes: [10, 15, 20, 25, 50, 100]
-        }
+        },
+        dateRange: null
     });
 
     watch(
@@ -218,6 +220,7 @@ export const useModerationStore = defineStore('Moderation', () => {
                     }
                 }
                 deleteExpiredPlayerModerations();
+                moderationTableLookup();
             })
             .catch((error) => {
                 console.error(
@@ -225,6 +228,62 @@ export const useModerationStore = defineStore('Moderation', () => {
                     error
                 );
             });
+    }
+
+    async function init() {
+        playerModerationTable.value.filters[0].value = JSON.parse(
+            await configRepository.getString('VRCX_playerModerationTableFilters', '[]')
+        );
+        const dateRangeStr = await configRepository.getString('VRCX_moderationTableDateRange', '');
+        if (dateRangeStr) {
+            try {
+                playerModerationTable.value.dateRange = JSON.parse(dateRangeStr);
+            } catch (e) {
+                playerModerationTable.value.dateRange = null;
+            }
+        }
+        moderationTableLookup();
+    }
+
+    init();
+
+    function moderationTableLookup() {
+        const data = Array.from(cachedPlayerModerations.values());
+        
+        // Filter by date range
+        let filtered = data;
+        if (playerModerationTable.value.dateRange && Array.isArray(playerModerationTable.value.dateRange) && playerModerationTable.value.dateRange.length === 2) {
+            const startDate = playerModerationTable.value.dateRange[0] ? new Date(playerModerationTable.value.dateRange[0]) : null;
+            const endDate = playerModerationTable.value.dateRange[1] ? new Date(playerModerationTable.value.dateRange[1]) : null;
+            filtered = data.filter((item) => {
+                const itemDate = new Date(item.created);
+                if (startDate && itemDate < startDate) return false;
+                if (endDate && itemDate > endDate) return false;
+                return true;
+            });
+        }
+        
+        playerModerationTable.value.data = filtered.sort((a, b) => {
+            const aDate = new Date(a.created);
+            const bDate = new Date(b.created);
+            return bDate - aDate; // descending order
+        });
+    }
+
+    function saveTableFilters() {
+        configRepository.setString(
+            'VRCX_playerModerationTableFilters',
+            JSON.stringify(playerModerationTable.value.filters[0].value)
+        );
+        if (playerModerationTable.value.dateRange) {
+            configRepository.setString(
+                'VRCX_moderationTableDateRange',
+                JSON.stringify(playerModerationTable.value.dateRange)
+            );
+        } else {
+            configRepository.setString('VRCX_moderationTableDateRange', '');
+        }
+        moderationTableLookup();
     }
 
     /**
@@ -273,6 +332,8 @@ export const useModerationStore = defineStore('Moderation', () => {
         refreshPlayerModerations,
         applyPlayerModeration,
         handlePlayerModerationDelete,
-        getUserModerations
+        getUserModerations,
+        moderationTableLookup,
+        saveTableFilters
     };
 });

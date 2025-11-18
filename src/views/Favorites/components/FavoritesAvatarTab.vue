@@ -620,46 +620,74 @@
 
     // Dark theme search input
     .dark .search-input {
-        width: 220px;
+        min-width: 200px;
+        max-width: 280px;
+        flex: 0 1 280px;
+        width: 280px;
         
         :deep(.el-input__wrapper) {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
+            background: rgba(20, 22, 32, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            padding: 0 16px;
+            
+            .el-input__inner {
+                color: rgba(255, 255, 255, 0.95);
+                font-size: 14px;
+                
+                &::placeholder {
+                    color: rgba(255, 255, 255, 0.5);
+                }
+            }
+
+            .el-input__prefix {
+                color: rgba(255, 255, 255, 0.6);
+                margin-right: 8px;
+            }
             
             &:hover {
-                background: rgba(255, 255, 255, 0.07);
-                border-color: rgba(255, 255, 255, 0.15);
+                background: rgba(20, 22, 32, 0.9);
+                border-color: rgba(255, 255, 255, 0.2);
             }
             
             &.is-focus {
-                background: rgba(255, 255, 255, 0.08);
-                border-color: rgba(255, 255, 255, 0.2);
+                background: rgba(20, 22, 32, 0.95);
+                border-color: rgba(255, 255, 255, 0.25);
+                box-shadow: 
+                    0 0 0 2px rgba(255, 255, 255, 0.1),
+                    0 4px 12px rgba(0, 0, 0, 0.15);
             }
-        }
-        
-        :deep(.el-input__inner) {
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 13px;
-            
-            &::placeholder {
-                color: rgba(255, 255, 255, 0.4);
-            }
-        }
-        
-        :deep(.el-input__prefix) {
-            color: rgba(255, 255, 255, 0.5);
         }
     }
 
     // Light theme search input
     html:not(.dark) .search-input {
-        width: 220px;
+        min-width: 200px;
+        max-width: 280px;
+        flex: 0 1 280px;
+        width: 280px;
         
         :deep(.el-input__wrapper) {
             background: #ffffff;
             border: 1px solid #e0e0e0;
-            border-radius: 8px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            padding: 0 16px;
+            
+            .el-input__inner {
+                color: #333333;
+                font-size: 14px;
+                
+                &::placeholder {
+                    color: #999999;
+                }
+            }
+
+            .el-input__prefix {
+                color: #666666;
+                margin-right: 8px;
+            }
             
             &:hover {
                 background: #f5f5f5;
@@ -669,20 +697,10 @@
             &.is-focus {
                 background: #ffffff;
                 border-color: #409eff;
+                box-shadow: 
+                    0 0 0 2px rgba(64, 158, 255, 0.1),
+                    0 4px 12px rgba(0, 0, 0, 0.1);
             }
-        }
-        
-        :deep(.el-input__inner) {
-            color: #333333;
-            font-size: 13px;
-            
-            &::placeholder {
-                color: #999999;
-            }
-        }
-        
-        :deep(.el-input__prefix) {
-            color: #999999;
         }
     }
 

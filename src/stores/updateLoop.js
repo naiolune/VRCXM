@@ -114,16 +114,72 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
                     state.nextAutoStateChange = 3;
                     userStore.updateAutoStateChange();
                 }
-                if (LINUX && --state.nextGetLogCheck <= 0) {
+                if ((LINUX || (typeof window !== 'undefined' && window.electron)) && --state.nextGetLogCheck <= 0) {
                     state.nextGetLogCheck = 0.5;
-                    const logLines = await LogWatcher.GetLogLines();
-                    if (logLines) {
-                        logLines.forEach((logLine) => {
-                            gameLogStore.addGameLogEvent(logLine);
+                    try {
+                        if (typeof LogWatcher === 'undefined' || typeof LogWatcher.GetLogLines !== 'function') {
+                            console.warn('[GameLog] LogWatcher.GetLogLines is not available', { 
+                                LogWatcher: typeof LogWatcher, 
+                                GetLogLines: typeof LogWatcher?.GetLogLines,
+                                LINUX,
+                                windowElectron: typeof window !== 'undefined' ? !!window.electron : false
+                            });
+                            return;
+                        }
+                        console.log('[GameLog] Calling LogWatcher.GetLogLines()...');
+                        const logLines = await LogWatcher.GetLogLines();
+                        console.log('[GameLog] GetLogLines returned:', { 
+                            result: logLines, 
+                            type: typeof logLines, 
+                            isArray: Array.isArray(logLines),
+                            length: logLines?.length 
                         });
+                        if (logLines && logLines.length > 0) {
+                            console.log(`[GameLog] ✅ GetLogLines returned ${logLines.length} events`);
+                            const joinLeaveEvents = logLines.filter(line => {
+                                try {
+                                    const parsed = JSON.parse(line);
+                                    return parsed && parsed.length > 2 && (parsed[2] === 'player-joined' || parsed[2] === 'player-left');
+                                } catch {
+                                    return false;
+                                }
+                            });
+                            if (joinLeaveEvents.length > 0) {
+                                console.log(`[GameLog] 🎯 Found ${joinLeaveEvents.length} join/leave events!`);
+                                joinLeaveEvents.forEach(event => {
+                                    try {
+                                        const parsed = JSON.parse(event);
+                                        console.log(`[GameLog] Join/Leave event:`, parsed);
+                                    } catch (e) {
+                                        console.log(`[GameLog] Join/Leave event (parse error):`, event.substring(0, 200));
+                                    }
+                                });
+                            } else {
+                                const sample = logLines[0]?.substring(0, 150);
+                                console.log(`[GameLog] No join/leave events in ${logLines.length} events. Sample:`, sample);
+                                // Show all event types for debugging
+                                const eventTypes = logLines.map(line => {
+                                    try {
+                                        const parsed = JSON.parse(line);
+                                        return parsed && parsed.length > 2 ? parsed[2] : 'unknown';
+                                    } catch {
+                                        return 'parse-error';
+                                    }
+                                });
+                                const typeCounts = {};
+                                eventTypes.forEach(type => typeCounts[type] = (typeCounts[type] || 0) + 1);
+                                console.log(`[GameLog] Event types in this batch:`, typeCounts);
+                            }
+                            logLines.forEach((logLine) => {
+                                gameLogStore.addGameLogEvent(logLine);
+                            });
+                        }
+                        // Removed the empty array logging to reduce spam
+                    } catch (error) {
+                        console.error(`[GameLog] Error calling GetLogLines:`, error);
                     }
                 }
-                if (LINUX && --state.nextGameRunningCheck <= 0) {
+                if ((LINUX || (typeof window !== 'undefined' && window.electron)) && --state.nextGameRunningCheck <= 0) {
                     state.nextGameRunningCheck = 1;
                     gameStore.updateIsGameRunning(
                         await AppApi.IsGameRunning(),

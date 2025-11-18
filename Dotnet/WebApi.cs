@@ -14,7 +14,7 @@ using NLog;
 using SixLabors.ImageSharp;
 using Timer = System.Threading.Timer;
 
-#if !LINUX
+#if !LINUX && !ELECTRON && !ELECTRON
 using CefSharp;
 using System.Windows.Forms;
 #endif
@@ -96,7 +96,7 @@ namespace VRCX
                 VRCXStorage.Instance.Set("VRCX_ProxyServer", string.Empty);
                 VRCXStorage.Instance.Save();
                 const string message = "The proxy server URI you used is invalid.\nVRCX will close, please correct the proxy URI.";
-#if !LINUX
+#if !LINUX && !ELECTRON
                 System.Windows.Forms.MessageBox.Show(message, "Invalid Proxy URI", MessageBoxButtons.OK, MessageBoxIcon.Error);
 #endif
                 Logger.Error(message);
@@ -112,7 +112,7 @@ namespace VRCX
 
         public void ClearCookies()
         {
-#if !LINUX
+#if !LINUX && !ELECTRON
             Cef.GetGlobalCookieManager().DeleteCookies();
 #endif
             _cookieContainer = new CookieContainer();

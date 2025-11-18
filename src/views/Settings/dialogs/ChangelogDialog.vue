@@ -21,7 +21,7 @@
                 style="height: 62vh; overflow-y: auto; margin-top: 10px" />
         </div>
         <template #footer>
-            <el-button @click="openExternalLink('https://github.com/vrcx-team/VRCX/releases')">
+            <el-button @click="openExternalLink('https://github.com/naiolune/VRCXM/releases')">
                 {{ t('dialog.change_log.github') }}
             </el-button>
             <el-button @click="openExternalLink('https://patreon.com/Natsumi_VRCX')">
