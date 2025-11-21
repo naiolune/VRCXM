@@ -37,7 +37,6 @@
                                                     :shortname="userDialog.$location.shortName"
                                                     style="margin-left: 5px" />
                                                 <el-tooltip
-                                                    v-if="canOpenInstanceInGame"
                                                     placement="top"
                                                     :content="t('dialog.user.info.open_in_vrchat_tooltip')">
                                                     <el-button
@@ -1554,7 +1553,7 @@
     } = useGroupStore();
     const { currentUserGroups, inviteGroupDialog, inGameGroupOrder } = storeToRefs(useGroupStore());
     const { lastLocation, lastLocationDestination } = storeToRefs(useLocationStore());
-    const { refreshInviteMessageTableData, canOpenInstanceInGame } = useInviteStore();
+    const { refreshInviteMessageTableData } = useInviteStore();
     const launchStore = useLaunchStore();
     const { tryOpenInstanceInVrc } = launchStore;
     const { isOpeningInstance } = storeToRefs(launchStore);
