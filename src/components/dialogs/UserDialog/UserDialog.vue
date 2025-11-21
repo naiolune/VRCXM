@@ -21,737 +21,871 @@
             <div class="user-dialog-body">
                 <div class="user-dialog-tabs-container">
                     <el-tabs v-model="userDialogLastActiveTab" @tab-click="userDialogTabClick" class="user-dialog-tabs">
-                <el-tab-pane name="Info" :label="t('dialog.user.info.header')">
-                    <div class="tab-content-wrapper">
-                        <template v-if="(isFriendOnline(userDialog.friend) || currentUser.id === userDialog.id) && isInSameInstance">
-                            <div
-                                v-if="userDialog.ref.location"
-                                class="tab-section-card instance-section">
-                            <div style="flex: none">
-                                <template v-if="isRealInstance(userDialog.$location.tag)">
-                                    <Launch :location="userDialog.$location.tag" />
-                                    <InviteYourself
-                                        :location="userDialog.$location.tag"
-                                        :shortname="userDialog.$location.shortName"
-                                        style="margin-left: 5px" />
-                                    <el-tooltip placement="top" :content="t('dialog.user.info.refresh_instance_info')"
-                                        ><el-button
-                                            size="small"
-                                            :icon="Refresh"
-                                            style="margin-left: 5px"
-                                            circle
-                                            @click="refreshInstancePlayerCount(userDialog.$location.tag)"></el-button>
-                                    </el-tooltip>
-                                    <LastJoin
-                                        :location="userDialog.$location.tag"
-                                        :currentlocation="lastLocation.location" />
-                                    <InstanceInfo
-                                        :location="userDialog.$location.tag"
-                                        :instance="userDialog.instance.ref"
-                                        :friendcount="userDialog.instance.friendCount" />
-                                </template>
-                                <Location
-                                    :location="userDialog.ref.location"
-                                    :traveling="userDialog.ref.travelingToLocation"
-                                    style="display: block; margin-top: 5px" />
-                            </div>
-                            <div class="x-friend-list" style="flex: 1; margin-top: 10px; max-height: 150px">
-                                <div
-                                    v-if="userDialog.$location.userId"
-                                    class="x-friend-item x-friend-item-border"
-                                    @click="showUserDialog(userDialog.$location.userId)">
-                                    <template v-if="userDialog.$location.user">
-                                        <div class="avatar" :class="userStatusClass(userDialog.$location.user)">
-                                            <img :src="userImage(userDialog.$location.user, true)" loading="lazy" />
+                        <el-tab-pane name="Info" :label="t('dialog.user.info.header')">
+                            <div class="tab-content-wrapper">
+                                <template
+                                    v-if="
+                                        (isFriendOnline(userDialog.friend) || currentUser.id === userDialog.id) &&
+                                        userDialog.ref.location
+                                    ">
+                                    <div v-if="userDialog.ref.location" class="tab-section-card instance-section">
+                                        <div style="flex: none">
+                                            <template v-if="isRealInstance(userDialog.$location.tag)">
+                                                <Launch :location="userDialog.$location.tag" />
+                                                <InviteYourself
+                                                    :location="userDialog.$location.tag"
+                                                    :shortname="userDialog.$location.shortName"
+                                                    style="margin-left: 5px" />
+                                                <el-tooltip
+                                                    v-if="canOpenInstanceInGame"
+                                                    placement="top"
+                                                    :content="t('dialog.user.info.open_in_vrchat_tooltip')">
+                                                    <el-button
+                                                        v-if="isOpeningInstance"
+                                                        size="small"
+                                                        circle
+                                                        style="margin-left: 5px">
+                                                        <el-icon class="is-loading">
+                                                            <Loading />
+                                                        </el-icon>
+                                                    </el-button>
+                                                    <el-button
+                                                        v-else
+                                                        size="small"
+                                                        :icon="VideoPlay"
+                                                        style="margin-left: 5px"
+                                                        circle
+                                                        @click="
+                                                            openInstanceInVrc(
+                                                                userDialog.$location.tag,
+                                                                userDialog.$location.shortName
+                                                            )
+                                                        "></el-button>
+                                                </el-tooltip>
+                                                <el-tooltip
+                                                    placement="top"
+                                                    :content="t('dialog.user.info.refresh_instance_info')"
+                                                    ><el-button
+                                                        size="small"
+                                                        :icon="Refresh"
+                                                        style="margin-left: 5px"
+                                                        circle
+                                                        @click="
+                                                            refreshInstancePlayerCount(userDialog.$location.tag)
+                                                        "></el-button>
+                                                </el-tooltip>
+                                                <LastJoin
+                                                    :location="userDialog.$location.tag"
+                                                    :currentlocation="lastLocation.location" />
+                                                <InstanceInfo
+                                                    :location="userDialog.$location.tag"
+                                                    :instance="userDialog.instance.ref"
+                                                    :friendcount="userDialog.instance.friendCount" />
+                                            </template>
+                                            <Location
+                                                :location="userDialog.ref.location"
+                                                :traveling="userDialog.ref.travelingToLocation"
+                                                style="display: block; margin-top: 5px" />
                                         </div>
+                                        <div class="x-friend-list" style="flex: 1; margin-top: 10px; max-height: 150px">
+                                            <div
+                                                v-if="userDialog.$location.userId"
+                                                class="x-friend-item x-friend-item-border"
+                                                @click="showUserDialog(userDialog.$location.userId)">
+                                                <template v-if="userDialog.$location.user">
+                                                    <div
+                                                        class="avatar"
+                                                        :class="userStatusClass(userDialog.$location.user)">
+                                                        <img
+                                                            :src="userImage(userDialog.$location.user, true)"
+                                                            loading="lazy" />
+                                                    </div>
+                                                    <div class="detail">
+                                                        <span
+                                                            class="name"
+                                                            :style="{ color: userDialog.$location.user.$userColour }"
+                                                            v-text="userDialog.$location.user.displayName"></span>
+                                                        <span class="extra">{{
+                                                            t('dialog.user.info.instance_creator')
+                                                        }}</span>
+                                                    </div>
+                                                </template>
+                                                <span v-else v-text="userDialog.$location.userId"></span>
+                                            </div>
+                                            <div
+                                                v-for="user in userDialog.users"
+                                                :key="user.id"
+                                                class="x-friend-item x-friend-item-border"
+                                                @click="showUserDialog(user.id)">
+                                                <div class="avatar" :class="userStatusClass(user)">
+                                                    <img :src="userImage(user, true)" loading="lazy" />
+                                                </div>
+                                                <div class="detail">
+                                                    <span
+                                                        class="name"
+                                                        :style="{ color: user.$userColour }"
+                                                        v-text="user.displayName"></span>
+                                                    <span v-if="user.location === 'traveling'" class="extra">
+                                                        <el-icon class="is-loading" style="margin-right: 3px"
+                                                            ><Loading
+                                                        /></el-icon>
+                                                        <Timer :epoch="user.$travelingToTime" />
+                                                    </span>
+                                                    <span v-else class="extra">
+                                                        <Timer :epoch="user.$location_at" />
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <div class="x-friend-list tab-content-list">
+                                    <div
+                                        v-if="userDialog.note && !hideUserNotes"
+                                        class="x-friend-item"
+                                        style="width: 100%; cursor: pointer">
+                                        <div class="detail" @click="isEditNoteAndMemoDialogVisible = true">
+                                            <span class="name">{{ t('dialog.user.info.note') }}</span>
+                                            <pre
+                                                class="extra"
+                                                style="
+                                                    font-family: inherit;
+                                                    font-size: 12px;
+                                                    white-space: pre-wrap;
+                                                    margin: 0 0.5em 0 0;
+                                                    max-height: 210px;
+                                                    overflow-y: auto;
+                                                "
+                                                >{{ userDialog.note }}</pre
+                                            >
+                                        </div>
+                                    </div>
+                                    <div
+                                        v-if="userDialog.memo && !hideUserMemos"
+                                        class="x-friend-item"
+                                        style="width: 100%; cursor: pointer">
+                                        <div class="detail" @click="isEditNoteAndMemoDialogVisible = true">
+                                            <span class="name">{{ t('dialog.user.info.memo') }}</span>
+                                            <pre
+                                                class="extra"
+                                                style="
+                                                    font-family: inherit;
+                                                    font-size: 12px;
+                                                    white-space: pre-wrap;
+                                                    margin: 0 0.5em 0 0;
+                                                    max-height: 210px;
+                                                    overflow-y: auto;
+                                                "
+                                                >{{ userDialog.memo }}</pre
+                                            >
+                                        </div>
+                                    </div>
+                                    <div class="x-friend-item" style="width: 100%; cursor: default">
                                         <div class="detail">
                                             <span
-                                                class="name"
-                                                :style="{ color: userDialog.$location.user.$userColour }"
-                                                v-text="userDialog.$location.user.displayName"></span>
-                                            <span class="extra">{{ t('dialog.user.info.instance_creator') }}</span>
+                                                v-if="
+                                                    userDialog.id !== currentUser.id &&
+                                                    userDialog.ref.profilePicOverride &&
+                                                    userDialog.ref.currentAvatarImageUrl
+                                                "
+                                                class="name">
+                                                {{ t('dialog.user.info.avatar_info_last_seen') }}
+                                            </span>
+                                            <span v-else class="name">{{ t('dialog.user.info.avatar_info') }}</span>
+                                            <div class="extra">
+                                                <AvatarInfo
+                                                    :imageurl="userDialog.ref.currentAvatarImageUrl"
+                                                    :userid="userDialog.id"
+                                                    :avatartags="userDialog.ref.currentAvatarTags"
+                                                    style="display: inline-block" />
+                                                <el-tooltip
+                                                    v-if="
+                                                        userDialog.ref.profilePicOverride &&
+                                                        !userDialog.ref.currentAvatarImageUrl
+                                                    "
+                                                    placement="top"
+                                                    :content="t('dialog.user.info.vrcplus_hides_avatar')">
+                                                    <el-icon><Warning /></el-icon>
+                                                </el-tooltip>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="x-friend-item" style="width: 100%; cursor: default">
+                                        <div class="detail">
+                                            <span class="name" style="margin-bottom: 5px">{{
+                                                t('dialog.user.info.represented_group')
+                                            }}</span>
+                                            <div
+                                                v-if="
+                                                    userDialog.isRepresentedGroupLoading ||
+                                                    (userDialog.representedGroup &&
+                                                        userDialog.representedGroup.isRepresenting)
+                                                "
+                                                class="extra">
+                                                <div style="display: inline-block; flex: none; margin-right: 5px">
+                                                    <el-image
+                                                        v-loading="userDialog.isRepresentedGroupLoading"
+                                                        class="x-link"
+                                                        :src="userDialog.representedGroup.$thumbnailUrl"
+                                                        style="
+                                                            flex: none;
+                                                            width: 60px;
+                                                            height: 60px;
+                                                            border-radius: 4px;
+                                                            object-fit: cover;
+                                                        "
+                                                        :style="{
+                                                            background: userDialog.isRepresentedGroupLoading
+                                                                ? '#f5f7fa'
+                                                                : ''
+                                                        }"
+                                                        @load="userDialog.isRepresentedGroupLoading = false"
+                                                        @click="
+                                                            showFullscreenImageDialog(
+                                                                userDialog.representedGroup.iconUrl
+                                                            )
+                                                        ">
+                                                        <template #error></template>
+                                                    </el-image>
+                                                </div>
+                                                <span
+                                                    v-if="userDialog.representedGroup.isRepresenting"
+                                                    style="vertical-align: top; cursor: pointer"
+                                                    @click="showGroupDialog(userDialog.representedGroup.groupId)">
+                                                    <span
+                                                        v-if="userDialog.representedGroup.ownerId === userDialog.id"
+                                                        style="margin-right: 5px"
+                                                        >👑</span
+                                                    >
+                                                    <span
+                                                        style="margin-right: 5px"
+                                                        v-text="userDialog.representedGroup.name"></span>
+                                                    <span>({{ userDialog.representedGroup.memberCount }})</span>
+                                                </span>
+                                            </div>
+                                            <div v-else class="extra">-</div>
+                                        </div>
+                                    </div>
+                                    <div class="x-friend-item" style="width: 100%; cursor: default">
+                                        <div class="detail">
+                                            <span class="name">{{ t('dialog.user.info.bio') }}</span>
+                                            <pre
+                                                class="extra"
+                                                style="
+                                                    font-family: inherit;
+                                                    font-size: 12px;
+                                                    white-space: pre-wrap;
+                                                    margin: 0 0.5em 0 0;
+                                                    max-height: 210px;
+                                                    overflow-y: auto;
+                                                "
+                                                >{{ userDialog.ref.bio || '-' }}</pre
+                                            >
+                                            <div style="float: right">
+                                                <el-button
+                                                    v-if="translationApi && userDialog.ref.bio"
+                                                    type="text"
+                                                    size="small"
+                                                    style="margin-left: 5px; padding: 0"
+                                                    @click="translateBio"
+                                                    ><i class="ri-translate-2"></i
+                                                ></el-button>
+                                                <el-button
+                                                    v-if="userDialog.id === currentUser.id"
+                                                    type="text"
+                                                    :icon="Edit"
+                                                    size="small"
+                                                    style="margin-left: 5px; padding: 0"
+                                                    @click="showBioDialog"></el-button>
+                                            </div>
+                                            <div style="margin-top: 5px">
+                                                <el-tooltip
+                                                    v-for="(link, index) in userDialog.ref.bioLinks"
+                                                    :key="index">
+                                                    <template #content>
+                                                        <span v-text="link"></span>
+                                                    </template>
+                                                    <!-- onerror="this.onerror=null;this.class='icon-error'" -->
+                                                    <img
+                                                        :src="getFaviconUrl(link)"
+                                                        style="
+                                                            width: 16px;
+                                                            height: 16px;
+                                                            vertical-align: middle;
+                                                            margin-right: 5px;
+                                                            cursor: pointer;
+                                                        "
+                                                        @click.stop="openExternalLink(link)"
+                                                        loading="lazy" />
+                                                </el-tooltip>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <template v-if="currentUser.id !== userDialog.id">
+                                        <div class="x-friend-item" style="cursor: default">
+                                            <div class="detail">
+                                                <span class="name">
+                                                    {{ t('dialog.user.info.last_seen') }}
+                                                    <el-tooltip
+                                                        placement="top"
+                                                        :content="t('dialog.user.info.accuracy_notice')">
+                                                        <el-icon style="margin-left: 3px"><Warning /></el-icon>
+                                                    </el-tooltip>
+                                                </span>
+                                                <span class="extra">{{
+                                                    formatDateFilter(userDialog.lastSeen, 'long')
+                                                }}</span>
+                                            </div>
+                                        </div>
+
+                                        <div
+                                            class="x-friend-item"
+                                            @click="showPreviousInstancesUserDialog(userDialog.ref)">
+                                            <div class="detail">
+                                                <div
+                                                    class="name"
+                                                    style="
+                                                        display: flex;
+                                                        justify-content: space-between;
+                                                        align-items: center;
+                                                    ">
+                                                    <div>
+                                                        {{ t('dialog.user.info.join_count') }}
+                                                        <el-tooltip
+                                                            placement="top"
+                                                            :content="t('dialog.user.info.accuracy_notice')">
+                                                            <el-icon style="margin-left: 3px"><Warning /></el-icon>
+                                                        </el-tooltip>
+                                                    </div>
+
+                                                    <el-tooltip
+                                                        placement="top"
+                                                        :content="t('dialog.user.info.open_previous_instance')">
+                                                        <el-icon style="margin-right: 16px"><MoreFilled /></el-icon>
+                                                    </el-tooltip>
+                                                </div>
+                                                <span v-if="userDialog.joinCount === 0" class="extra">-</span>
+                                                <span v-else class="extra" v-text="userDialog.joinCount"></span>
+                                            </div>
+                                        </div>
+
+                                        <div class="x-friend-item" style="cursor: default">
+                                            <div class="detail">
+                                                <span class="name">
+                                                    {{ t('dialog.user.info.time_together') }}
+                                                    <el-tooltip
+                                                        placement="top"
+                                                        :content="t('dialog.user.info.accuracy_notice')">
+                                                        <el-icon style="margin-left: 3px"><Warning /></el-icon>
+                                                    </el-tooltip>
+                                                </span>
+                                                <span v-if="userDialog.timeSpent === 0" class="extra">-</span>
+                                                <span v-else class="extra">{{ timeToText(userDialog.timeSpent) }}</span>
+                                            </div>
                                         </div>
                                     </template>
-                                    <span v-else v-text="userDialog.$location.userId"></span>
-                                </div>
-                                <div
-                                    v-for="user in userDialog.users"
-                                    :key="user.id"
-                                    class="x-friend-item x-friend-item-border"
-                                    @click="showUserDialog(user.id)">
-                                    <div class="avatar" :class="userStatusClass(user)">
-                                        <img :src="userImage(user, true)" loading="lazy" />
-                                    </div>
-                                    <div class="detail">
-                                        <span
-                                            class="name"
-                                            :style="{ color: user.$userColour }"
-                                            v-text="user.displayName"></span>
-                                        <span v-if="user.location === 'traveling'" class="extra">
-                                            <el-icon class="is-loading" style="margin-right: 3px"><Loading /></el-icon>
-                                            <Timer :epoch="user.$travelingToTime" />
-                                        </span>
-                                        <span v-else class="extra">
-                                            <Timer :epoch="user.$location_at" />
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </template>
-
-                    <div class="x-friend-list tab-content-list">
-                        <div
-                            v-if="userDialog.note && !hideUserNotes"
-                            class="x-friend-item"
-                            style="width: 100%; cursor: pointer">
-                            <div class="detail" @click="isEditNoteAndMemoDialogVisible = true">
-                                <span class="name">{{ t('dialog.user.info.note') }}</span>
-                                <pre
-                                    class="extra"
-                                    style="
-                                        font-family: inherit;
-                                        font-size: 12px;
-                                        white-space: pre-wrap;
-                                        margin: 0 0.5em 0 0;
-                                        max-height: 210px;
-                                        overflow-y: auto;
-                                    "
-                                    >{{ userDialog.note }}</pre
-                                >
-                            </div>
-                        </div>
-                        <div
-                            v-if="userDialog.memo && !hideUserMemos"
-                            class="x-friend-item"
-                            style="width: 100%; cursor: pointer">
-                            <div class="detail" @click="isEditNoteAndMemoDialogVisible = true">
-                                <span class="name">{{ t('dialog.user.info.memo') }}</span>
-                                <pre
-                                    class="extra"
-                                    style="
-                                        font-family: inherit;
-                                        font-size: 12px;
-                                        white-space: pre-wrap;
-                                        margin: 0 0.5em 0 0;
-                                        max-height: 210px;
-                                        overflow-y: auto;
-                                    "
-                                    >{{ userDialog.memo }}</pre
-                                >
-                            </div>
-                        </div>
-                        <div class="x-friend-item" style="width: 100%; cursor: default">
-                            <div class="detail">
-                                <span
-                                    v-if="
-                                        userDialog.id !== currentUser.id &&
-                                        userDialog.ref.profilePicOverride &&
-                                        userDialog.ref.currentAvatarImageUrl
-                                    "
-                                    class="name">
-                                    {{ t('dialog.user.info.avatar_info_last_seen') }}
-                                </span>
-                                <span v-else class="name">{{ t('dialog.user.info.avatar_info') }}</span>
-                                <div class="extra">
-                                    <AvatarInfo
-                                        :imageurl="userDialog.ref.currentAvatarImageUrl"
-                                        :userid="userDialog.id"
-                                        :avatartags="userDialog.ref.currentAvatarTags"
-                                        style="display: inline-block" />
-                                    <el-tooltip
-                                        v-if="
-                                            userDialog.ref.profilePicOverride && !userDialog.ref.currentAvatarImageUrl
-                                        "
-                                        placement="top"
-                                        :content="t('dialog.user.info.vrcplus_hides_avatar')">
-                                        <el-icon><Warning /></el-icon>
-                                    </el-tooltip>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="x-friend-item" style="width: 100%; cursor: default">
-                            <div class="detail">
-                                <span class="name" style="margin-bottom: 5px">{{
-                                    t('dialog.user.info.represented_group')
-                                }}</span>
-                                <div
-                                    v-if="
-                                        userDialog.isRepresentedGroupLoading ||
-                                        (userDialog.representedGroup && userDialog.representedGroup.isRepresenting)
-                                    "
-                                    class="extra">
-                                    <div style="display: inline-block; flex: none; margin-right: 5px">
-                                        <el-image
-                                            v-loading="userDialog.isRepresentedGroupLoading"
-                                            class="x-link"
-                                            :src="userDialog.representedGroup.$thumbnailUrl"
-                                            style="
-                                                flex: none;
-                                                width: 60px;
-                                                height: 60px;
-                                                border-radius: 4px;
-                                                object-fit: cover;
-                                            "
-                                            :style="{
-                                                background: userDialog.isRepresentedGroupLoading ? '#f5f7fa' : ''
-                                            }"
-                                            @load="userDialog.isRepresentedGroupLoading = false"
-                                            @click="showFullscreenImageDialog(userDialog.representedGroup.iconUrl)">
-                                            <template #error></template>
-                                        </el-image>
-                                    </div>
-                                    <span
-                                        v-if="userDialog.representedGroup.isRepresenting"
-                                        style="vertical-align: top; cursor: pointer"
-                                        @click="showGroupDialog(userDialog.representedGroup.groupId)">
-                                        <span
-                                            v-if="userDialog.representedGroup.ownerId === userDialog.id"
-                                            style="margin-right: 5px"
-                                            >👑</span
-                                        >
-                                        <span
-                                            style="margin-right: 5px"
-                                            v-text="userDialog.representedGroup.name"></span>
-                                        <span>({{ userDialog.representedGroup.memberCount }})</span>
-                                    </span>
-                                </div>
-                                <div v-else class="extra">-</div>
-                            </div>
-                        </div>
-                        <div class="x-friend-item" style="width: 100%; cursor: default">
-                            <div class="detail">
-                                <span class="name">{{ t('dialog.user.info.bio') }}</span>
-                                <pre
-                                    class="extra"
-                                    style="
-                                        font-family: inherit;
-                                        font-size: 12px;
-                                        white-space: pre-wrap;
-                                        margin: 0 0.5em 0 0;
-                                        max-height: 210px;
-                                        overflow-y: auto;
-                                    "
-                                    >{{ userDialog.ref.bio || '-' }}</pre
-                                >
-                                <div style="float: right">
-                                    <el-button
-                                        v-if="translationApi && userDialog.ref.bio"
-                                        type="text"
-                                        size="small"
-                                        style="margin-left: 5px; padding: 0"
-                                        @click="translateBio"
-                                        ><i class="ri-translate-2"></i
-                                    ></el-button>
-                                    <el-button
-                                        v-if="userDialog.id === currentUser.id"
-                                        type="text"
-                                        :icon="Edit"
-                                        size="small"
-                                        style="margin-left: 5px; padding: 0"
-                                        @click="showBioDialog"></el-button>
-                                </div>
-                                <div style="margin-top: 5px">
-                                    <el-tooltip v-for="(link, index) in userDialog.ref.bioLinks" :key="index">
-                                        <template #content>
-                                            <span v-text="link"></span>
-                                        </template>
-                                        <!-- onerror="this.onerror=null;this.class='icon-error'" -->
-                                        <img
-                                            :src="getFaviconUrl(link)"
-                                            style="
-                                                width: 16px;
-                                                height: 16px;
-                                                vertical-align: middle;
-                                                margin-right: 5px;
-                                                cursor: pointer;
-                                            "
-                                            @click.stop="openExternalLink(link)"
-                                            loading="lazy" />
-                                    </el-tooltip>
-                                </div>
-                            </div>
-                        </div>
-                        <template v-if="currentUser.id !== userDialog.id">
-                            <div class="x-friend-item" style="cursor: default">
-                                <div class="detail">
-                                    <span class="name">
-                                        {{ t('dialog.user.info.last_seen') }}
-                                        <el-tooltip placement="top" :content="t('dialog.user.info.accuracy_notice')">
-                                            <el-icon style="margin-left: 3px"><Warning /></el-icon>
-                                        </el-tooltip>
-                                    </span>
-                                    <span class="extra">{{ formatDateFilter(userDialog.lastSeen, 'long') }}</span>
-                                </div>
-                            </div>
-
-                            <div class="x-friend-item" @click="showPreviousInstancesUserDialog(userDialog.ref)">
-                                <div class="detail">
-                                    <div
-                                        class="name"
-                                        style="display: flex; justify-content: space-between; align-items: center">
-                                        <div>
-                                            {{ t('dialog.user.info.join_count') }}
-                                            <el-tooltip
-                                                placement="top"
-                                                :content="t('dialog.user.info.accuracy_notice')">
-                                                <el-icon style="margin-left: 3px"><Warning /></el-icon>
-                                            </el-tooltip>
-                                        </div>
-
+                                    <template v-else>
                                         <el-tooltip
+                                            :disabled="currentUser.id !== userDialog.id"
                                             placement="top"
                                             :content="t('dialog.user.info.open_previous_instance')">
-                                            <el-icon style="margin-right: 16px"><MoreFilled /></el-icon>
+                                            <div
+                                                class="x-friend-item"
+                                                @click="showPreviousInstancesUserDialog(userDialog.ref)">
+                                                <div class="detail">
+                                                    <span class="name">
+                                                        {{ t('dialog.user.info.play_time') }}
+                                                        <el-tooltip
+                                                            placement="top"
+                                                            :content="t('dialog.user.info.accuracy_notice')">
+                                                            <el-icon style="margin-left: 3px"><Warning /></el-icon>
+                                                        </el-tooltip>
+                                                    </span>
+                                                    <span v-if="userDialog.timeSpent === 0" class="extra">-</span>
+                                                    <span v-else class="extra">{{
+                                                        timeToText(userDialog.timeSpent)
+                                                    }}</span>
+                                                </div>
+                                            </div>
                                         </el-tooltip>
-                                    </div>
-                                    <span v-if="userDialog.joinCount === 0" class="extra">-</span>
-                                    <span v-else class="extra" v-text="userDialog.joinCount"></span>
-                                </div>
-                            </div>
-
-                            <div class="x-friend-item" style="cursor: default">
-                                <div class="detail">
-                                    <span class="name">
-                                        {{ t('dialog.user.info.time_together') }}
-                                        <el-tooltip placement="top" :content="t('dialog.user.info.accuracy_notice')">
-                                            <el-icon style="margin-left: 3px"><Warning /></el-icon>
-                                        </el-tooltip>
-                                    </span>
-                                    <span v-if="userDialog.timeSpent === 0" class="extra">-</span>
-                                    <span v-else class="extra">{{ timeToText(userDialog.timeSpent) }}</span>
-                                </div>
-                            </div>
-                        </template>
-                        <template v-else>
-                            <el-tooltip
-                                :disabled="currentUser.id !== userDialog.id"
-                                placement="top"
-                                :content="t('dialog.user.info.open_previous_instance')">
-                                <div class="x-friend-item" @click="showPreviousInstancesUserDialog(userDialog.ref)">
-                                    <div class="detail">
-                                        <span class="name">
-                                            {{ t('dialog.user.info.play_time') }}
-                                            <el-tooltip
-                                                placement="top"
-                                                :content="t('dialog.user.info.accuracy_notice')">
-                                                <el-icon style="margin-left: 3px"><Warning /></el-icon>
-                                            </el-tooltip>
-                                        </span>
-                                        <span v-if="userDialog.timeSpent === 0" class="extra">-</span>
-                                        <span v-else class="extra">{{ timeToText(userDialog.timeSpent) }}</span>
-                                    </div>
-                                </div>
-                            </el-tooltip>
-                        </template>
-                        <div class="x-friend-item" style="cursor: default">
-                            <el-tooltip :placement="currentUser.id !== userDialog.id ? 'bottom' : 'top'">
-                                <template #content>
-                                    <span>{{ formatDateFilter(userOnlineForTimestamp(userDialog), 'short') }}</span>
-                                </template>
-                                <div class="detail">
-                                    <span
-                                        v-if="userDialog.ref.state === 'online' && userDialog.ref.$online_for"
-                                        class="name">
-                                        {{ t('dialog.user.info.online_for') }}
-                                        <el-tooltip placement="top" :content="t('dialog.user.info.accuracy_notice')">
-                                            <el-icon style="margin-left: 3px"><Warning /></el-icon>
-                                        </el-tooltip>
-                                    </span>
-                                    <span v-else class="name">
-                                        {{ t('dialog.user.info.offline_for') }}
-                                        <el-tooltip placement="top" :content="t('dialog.user.info.accuracy_notice')">
-                                            <el-icon style="margin-left: 3px"><Warning /></el-icon>
-                                        </el-tooltip>
-                                    </span>
-                                    <span class="extra">{{ userOnlineFor(userDialog) }}</span>
-                                </div>
-                            </el-tooltip>
-                        </div>
-                        <div class="x-friend-item" style="cursor: default">
-                            <el-tooltip :placement="currentUser.id !== userDialog.id ? 'bottom' : 'top'">
-                                <template #content>
-                                    <span
-                                        >{{ t('dialog.user.info.last_login') }}
-                                        {{ formatDateFilter(userDialog.ref.last_login, 'long') }}</span
-                                    >
-                                    <br />
-                                    <span
-                                        >{{ t('dialog.user.info.last_activity') }}
-                                        {{ formatDateFilter(userDialog.ref.last_activity, 'long') }}</span
-                                    >
-                                </template>
-                                <div class="detail">
-                                    <span class="name">{{ t('dialog.user.info.last_activity') }}</span>
-                                    <span v-if="userDialog.ref.last_activity" class="extra">{{
-                                        timeToText(Date.now() - Date.parse(userDialog.ref.last_activity))
-                                    }}</span>
-                                    <span v-else class="extra">-</span>
-                                </div>
-                            </el-tooltip>
-                        </div>
-                        <div class="x-friend-item" style="cursor: default">
-                            <div class="detail">
-                                <span class="name">{{ t('dialog.user.info.date_joined') }}</span>
-                                <span class="extra" v-text="userDialog.ref.date_joined"></span>
-                            </div>
-                        </div>
-                        <div v-if="currentUser.id !== userDialog.id" class="x-friend-item" style="cursor: default">
-                            <div class="detail">
-                                <span v-if="userDialog.unFriended" class="name">
-                                    {{ t('dialog.user.info.unfriended') }}
-                                    <el-tooltip placement="top" :content="t('dialog.user.info.accuracy_notice')">
-                                        <el-icon style="margin-left: 3px"><Warning /></el-icon>
-                                    </el-tooltip>
-                                </span>
-                                <span v-else class="name">
-                                    {{ t('dialog.user.info.friended') }}
-                                    <el-tooltip placement="top" :content="t('dialog.user.info.accuracy_notice')">
-                                        <el-icon style="margin-left: 3px"><Warning /></el-icon>
-                                    </el-tooltip>
-                                </span>
-                                <span class="extra">{{ formatDateFilter(userDialog.dateFriended, 'long') }}</span>
-                            </div>
-                        </div>
-                        <template v-if="currentUser.id === userDialog.id">
-                            <div class="x-friend-item" @click="toggleAvatarCopying">
-                                <div class="detail">
-                                    <span class="name">{{ t('dialog.user.info.avatar_cloning') }}</span>
-                                    <span v-if="currentUser.allowAvatarCopying" class="extra" style="color: #67c23a">{{
-                                        t('dialog.user.info.avatar_cloning_allow')
-                                    }}</span>
-                                    <span v-else class="extra" style="color: #f56c6c">{{
-                                        t('dialog.user.info.avatar_cloning_deny')
-                                    }}</span>
-                                </div>
-                            </div>
-                            <div class="x-friend-item" @click="toggleAllowBooping">
-                                <div class="detail">
-                                    <span class="name">{{ t('dialog.user.info.booping') }}</span>
-                                    <span v-if="currentUser.isBoopingEnabled" class="extra" style="color: #67c23a">{{
-                                        t('dialog.user.info.avatar_cloning_allow')
-                                    }}</span>
-                                    <span v-else class="extra" style="color: #f56c6c">{{
-                                        t('dialog.user.info.avatar_cloning_deny')
-                                    }}</span>
-                                </div>
-                            </div>
-                        </template>
-                        <template v-else>
-                            <div class="x-friend-item" style="cursor: default">
-                                <div class="detail">
-                                    <span class="name">{{ t('dialog.user.info.avatar_cloning') }}</span>
-                                    <span
-                                        v-if="userDialog.ref.allowAvatarCopying"
-                                        class="extra"
-                                        style="color: #67c23a"
-                                        >{{ t('dialog.user.info.avatar_cloning_allow') }}</span
-                                    >
-                                    <span v-else class="extra" style="color: #f56c6c">{{
-                                        t('dialog.user.info.avatar_cloning_deny')
-                                    }}</span>
-                                </div>
-                            </div>
-                        </template>
-                        <div
-                            v-if="userDialog.ref.id === currentUser.id"
-                            class="x-friend-item"
-                            @click="getVRChatCredits()">
-                            <div class="detail">
-                                <span class="name">{{ t('view.profile.profile.vrchat_credits') }}</span>
-                                <span class="extra">{{ vrchatCredit ?? t('view.profile.profile.refresh') }}</span>
-                            </div>
-                        </div>
-                        <div
-                            v-if="userDialog.ref.id === currentUser.id && currentUser.homeLocation"
-                            class="x-friend-item"
-                            style="width: 100%"
-                            @click="showWorldDialog(currentUser.homeLocation)">
-                            <div class="detail">
-                                <span class="name">{{ t('dialog.user.info.home_location') }}</span>
-                                <span class="extra">
-                                    <span v-text="userDialog.$homeLocationName"></span>
-                                    <el-button
-                                        size="small"
-                                        :icon="Delete"
-                                        circle
-                                        style="margin-left: 5px"
-                                        @click.stop="resetHome()">
-                                    </el-button>
-                                </span>
-                            </div>
-                        </div>
-                        <div class="x-friend-item" style="width: 100%; cursor: default">
-                            <div class="detail">
-                                <span class="name">{{ t('dialog.user.info.id') }}</span>
-                                <span class="extra">
-                                    {{ userDialog.id }}
-                                    <el-tooltip placement="top" :content="t('dialog.user.info.id_tooltip')">
-                                        <el-dropdown trigger="click" size="small" style="margin-left: 5px" @click.stop>
-                                            <el-button
-                                                type="default"
-                                                :icon="CopyDocument"
-                                                size="small"
-                                                circle></el-button>
-                                            <template #dropdown>
-                                                <el-dropdown-menu>
-                                                    <el-dropdown-item @click="copyUserId(userDialog.id)">{{
-                                                        t('dialog.user.info.copy_id')
-                                                    }}</el-dropdown-item>
-                                                    <el-dropdown-item @click="copyUserURL(userDialog.id)">{{
-                                                        t('dialog.user.info.copy_url')
-                                                    }}</el-dropdown-item>
-                                                    <el-dropdown-item
-                                                        @click="copyUserDisplayName(userDialog.ref.displayName)"
-                                                        >{{ t('dialog.user.info.copy_display_name') }}</el-dropdown-item
-                                                    >
-                                                </el-dropdown-menu>
+                                    </template>
+                                    <div class="x-friend-item" style="cursor: default">
+                                        <el-tooltip :placement="currentUser.id !== userDialog.id ? 'bottom' : 'top'">
+                                            <template #content>
+                                                <span>{{
+                                                    formatDateFilter(userOnlineForTimestamp(userDialog), 'short')
+                                                }}</span>
                                             </template>
-                                        </el-dropdown>
-                                    </el-tooltip>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    </div>
-                </el-tab-pane>
-
-                <el-tab-pane name="Groups" :label="t('dialog.user.groups.header')" lazy>
-                    <div class="tab-content-wrapper">
-                        <div class="tab-section-header">
-                        <div style="display: flex; align-items: center">
-                            <el-button
-                                type="default"
-                                :loading="userDialog.isGroupsLoading"
-                                size="small"
-                                :icon="Refresh"
-                                circle
-                                @click="getUserGroups(userDialog.id)">
-                            </el-button>
-                            <span style="margin-left: 5px">{{
-                                t('dialog.user.groups.total_count', { count: userGroups.groups.length })
-                            }}</span>
-                            <template v-if="userDialogGroupEditMode">
-                                <span style="margin-left: 10px; color: #909399; font-size: 10px">{{
-                                    t('dialog.user.groups.hold_shift')
-                                }}</span>
-                            </template>
-                        </div>
-                        <div style="display: flex; align-items: center">
-                            <template v-if="!userDialogGroupEditMode">
-                                <span style="margin-right: 5px">{{ t('dialog.user.groups.sort_by') }}</span>
-                                <el-dropdown
-                                    trigger="click"
-                                    size="small"
-                                    style="margin-right: 5px"
-                                    :disabled="userDialog.isGroupsLoading"
-                                    @click.stop>
-                                    <el-button size="small">
-                                        <span
-                                            >{{ t(userDialog.groupSorting.name) }}
-                                            <el-icon style="margin-left: 5px"><ArrowDown /></el-icon>
-                                        </span>
-                                    </el-button>
-                                    <template #dropdown>
-                                        <el-dropdown-menu>
-                                            <el-dropdown-item
-                                                v-for="(item, key) in userDialogGroupSortingOptions"
-                                                :key="key"
-                                                :disabled="
-                                                    item === userDialogGroupSortingOptions.inGame &&
-                                                    userDialog.id !== currentUser.id
-                                                "
-                                                @click="setUserDialogGroupSorting(item)"
-                                                >{{ t(item.name) }}
-                                            </el-dropdown-item>
-                                        </el-dropdown-menu>
-                                    </template>
-                                </el-dropdown>
-                            </template>
-                            <el-button
-                                v-if="userDialogGroupEditMode"
-                                size="small"
-                                :icon="Edit"
-                                style="margin-right: 5px; height: 29px; padding: 7px 15px"
-                                @click="exitEditModeCurrentUserGroups">
-                                {{ t('dialog.user.groups.exit_edit_mode') }}
-                            </el-button>
-                            <el-button
-                                v-else-if="currentUser.id === userDialog.id"
-                                size="small"
-                                :icon="Edit"
-                                style="margin-right: 5px; height: 29px; padding: 7px 15px"
-                                @click="editModeCurrentUserGroups">
-                                {{ t('dialog.user.groups.edit_mode') }}
-                            </el-button>
-                        </div>
-                    </div>
-                    <div v-loading="userDialog.isGroupsLoading" class="tab-content-body">
-                        <template v-if="userDialogGroupEditMode">
-                            <div class="x-friend-list" style="margin-top: 10px; margin-bottom: 15px; max-height: unset">
-                                <!-- Bulk actions dropdown (shown only in edit mode) -->
-                                <el-dropdown trigger="click">
-                                    <el-button
-                                        size="small"
-                                        :icon="Setting"
-                                        style="margin-right: 5px; height: 29px; padding: 7px 15px; margin-bottom: 5px">
-                                        {{ t('dialog.group.actions.manage_selected') }}
-                                        <el-icon style="margin-left: 5px"><ArrowDown /></el-icon>
-                                    </el-button>
-                                    <template #dropdown>
-                                        <el-dropdown-menu>
-                                            <el-dropdown-item @click="bulkSetVisibility('visible')">
-                                                {{ t('dialog.group.actions.visibility_everyone') }}
-                                            </el-dropdown-item>
-                                            <el-dropdown-item @click="bulkSetVisibility('friends')">
-                                                {{ t('dialog.group.actions.visibility_friends') }}
-                                            </el-dropdown-item>
-                                            <el-dropdown-item @click="bulkSetVisibility('hidden')">
-                                                {{ t('dialog.group.actions.visibility_hidden') }}
-                                            </el-dropdown-item>
-                                            <el-dropdown-item divided @click="bulkLeaveGroups">
-                                                <el-icon><Delete /></el-icon>
-                                                {{ t('dialog.user.groups.leave_group_tooltip') }}
-                                            </el-dropdown-item>
-                                        </el-dropdown-menu>
-                                    </template>
-                                </el-dropdown>
-
-                                <!-- Select All button -->
-                                <el-button
-                                    size="small"
-                                    :icon="userDialogGroupAllSelected ? Close : Check"
-                                    style="height: 29px; padding: 7px 15px; margin-bottom: 5px"
-                                    @click="selectAllGroups">
-                                    {{
-                                        userDialogGroupAllSelected
-                                            ? t('dialog.group.actions.deselect_all')
-                                            : t('dialog.group.actions.select_all')
-                                    }}
-                                </el-button>
-
-                                <div
-                                    v-for="group in userDialogGroupEditGroups"
-                                    :key="group.id"
-                                    class="x-friend-item x-friend-item-border"
-                                    style="width: 100%"
-                                    @click="showGroupDialog(group.id)">
-                                    <!-- Manual checkbox -->
+                                            <div class="detail">
+                                                <span
+                                                    v-if="
+                                                        userDialog.ref.state === 'online' && userDialog.ref.$online_for
+                                                    "
+                                                    class="name">
+                                                    {{ t('dialog.user.info.online_for') }}
+                                                    <el-tooltip
+                                                        placement="top"
+                                                        :content="t('dialog.user.info.accuracy_notice')">
+                                                        <el-icon style="margin-left: 3px"><Warning /></el-icon>
+                                                    </el-tooltip>
+                                                </span>
+                                                <span v-else class="name">
+                                                    {{ t('dialog.user.info.offline_for') }}
+                                                    <el-tooltip
+                                                        placement="top"
+                                                        :content="t('dialog.user.info.accuracy_notice')">
+                                                        <el-icon style="margin-left: 3px"><Warning /></el-icon>
+                                                    </el-tooltip>
+                                                </span>
+                                                <span class="extra">{{ userOnlineFor(userDialog) }}</span>
+                                            </div>
+                                        </el-tooltip>
+                                    </div>
+                                    <div class="x-friend-item" style="cursor: default">
+                                        <el-tooltip :placement="currentUser.id !== userDialog.id ? 'bottom' : 'top'">
+                                            <template #content>
+                                                <span
+                                                    >{{ t('dialog.user.info.last_login') }}
+                                                    {{ formatDateFilter(userDialog.ref.last_login, 'long') }}</span
+                                                >
+                                                <br />
+                                                <span
+                                                    >{{ t('dialog.user.info.last_activity') }}
+                                                    {{ formatDateFilter(userDialog.ref.last_activity, 'long') }}</span
+                                                >
+                                            </template>
+                                            <div class="detail">
+                                                <span class="name">{{ t('dialog.user.info.last_activity') }}</span>
+                                                <span v-if="userDialog.ref.last_activity" class="extra">{{
+                                                    timeToText(Date.now() - Date.parse(userDialog.ref.last_activity))
+                                                }}</span>
+                                                <span v-else class="extra">-</span>
+                                            </div>
+                                        </el-tooltip>
+                                    </div>
+                                    <div class="x-friend-item" style="cursor: default">
+                                        <div class="detail">
+                                            <span class="name">{{ t('dialog.user.info.date_joined') }}</span>
+                                            <span class="extra" v-text="userDialog.ref.date_joined"></span>
+                                        </div>
+                                    </div>
                                     <div
-                                        style="
-                                            margin-left: 5px;
-                                            margin-right: 5px;
-                                            transform-origin: left center;
-                                        "
-                                        @click.stop>
-                                        <el-checkbox
-                                            :checked="userDialogGroupEditSelectedGroupIds.includes(group.id)"
-                                            @change="() => toggleGroupSelection(group.id)" />
+                                        v-if="currentUser.id !== userDialog.id"
+                                        class="x-friend-item"
+                                        style="cursor: default">
+                                        <div class="detail">
+                                            <span v-if="userDialog.unFriended" class="name">
+                                                {{ t('dialog.user.info.unfriended') }}
+                                                <el-tooltip
+                                                    placement="top"
+                                                    :content="t('dialog.user.info.accuracy_notice')">
+                                                    <el-icon style="margin-left: 3px"><Warning /></el-icon>
+                                                </el-tooltip>
+                                            </span>
+                                            <span v-else class="name">
+                                                {{ t('dialog.user.info.friended') }}
+                                                <el-tooltip
+                                                    placement="top"
+                                                    :content="t('dialog.user.info.accuracy_notice')">
+                                                    <el-icon style="margin-left: 3px"><Warning /></el-icon>
+                                                </el-tooltip>
+                                            </span>
+                                            <span class="extra">{{
+                                                formatDateFilter(userDialog.dateFriended, 'long')
+                                            }}</span>
+                                        </div>
                                     </div>
+                                    <template v-if="currentUser.id === userDialog.id">
+                                        <div class="x-friend-item" @click="toggleAvatarCopying">
+                                            <div class="detail">
+                                                <span class="name">{{ t('dialog.user.info.avatar_cloning') }}</span>
+                                                <span
+                                                    v-if="currentUser.allowAvatarCopying"
+                                                    class="extra"
+                                                    style="color: #67c23a"
+                                                    >{{ t('dialog.user.info.avatar_cloning_allow') }}</span
+                                                >
+                                                <span v-else class="extra" style="color: #f56c6c">{{
+                                                    t('dialog.user.info.avatar_cloning_deny')
+                                                }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="x-friend-item" @click="toggleAllowBooping">
+                                            <div class="detail">
+                                                <span class="name">{{ t('dialog.user.info.booping') }}</span>
+                                                <span
+                                                    v-if="currentUser.isBoopingEnabled"
+                                                    class="extra"
+                                                    style="color: #67c23a"
+                                                    >{{ t('dialog.user.info.avatar_cloning_allow') }}</span
+                                                >
+                                                <span v-else class="extra" style="color: #f56c6c">{{
+                                                    t('dialog.user.info.avatar_cloning_deny')
+                                                }}</span>
+                                            </div>
+                                        </div>
+                                    </template>
+                                    <template v-else>
+                                        <div class="x-friend-item" style="cursor: default">
+                                            <div class="detail">
+                                                <span class="name">{{ t('dialog.user.info.avatar_cloning') }}</span>
+                                                <span
+                                                    v-if="userDialog.ref.allowAvatarCopying"
+                                                    class="extra"
+                                                    style="color: #67c23a"
+                                                    >{{ t('dialog.user.info.avatar_cloning_allow') }}</span
+                                                >
+                                                <span v-else class="extra" style="color: #f56c6c">{{
+                                                    t('dialog.user.info.avatar_cloning_deny')
+                                                }}</span>
+                                            </div>
+                                        </div>
+                                    </template>
+                                    <div
+                                        v-if="userDialog.ref.id === currentUser.id"
+                                        class="x-friend-item"
+                                        @click="getVRChatCredits()">
+                                        <div class="detail">
+                                            <span class="name">{{ t('view.profile.profile.vrchat_credits') }}</span>
+                                            <span class="extra">{{
+                                                vrchatCredit ?? t('view.profile.profile.refresh')
+                                            }}</span>
+                                        </div>
+                                    </div>
+                                    <div
+                                        v-if="userDialog.ref.id === currentUser.id && currentUser.homeLocation"
+                                        class="x-friend-item"
+                                        style="width: 100%"
+                                        @click="showWorldDialog(currentUser.homeLocation)">
+                                        <div class="detail">
+                                            <span class="name">{{ t('dialog.user.info.home_location') }}</span>
+                                            <span class="extra">
+                                                <span v-text="userDialog.$homeLocationName"></span>
+                                                <el-button
+                                                    size="small"
+                                                    :icon="Delete"
+                                                    circle
+                                                    style="margin-left: 5px"
+                                                    @click.stop="resetHome()">
+                                                </el-button>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="x-friend-item" style="width: 100%; cursor: default">
+                                        <div class="detail">
+                                            <span class="name">{{ t('dialog.user.info.id') }}</span>
+                                            <span class="extra">
+                                                {{ userDialog.id }}
+                                                <el-tooltip placement="top" :content="t('dialog.user.info.id_tooltip')">
+                                                    <el-dropdown
+                                                        trigger="click"
+                                                        size="small"
+                                                        style="margin-left: 5px"
+                                                        @click.stop>
+                                                        <el-button
+                                                            type="default"
+                                                            :icon="CopyDocument"
+                                                            size="small"
+                                                            circle></el-button>
+                                                        <template #dropdown>
+                                                            <el-dropdown-menu>
+                                                                <el-dropdown-item @click="copyUserId(userDialog.id)">{{
+                                                                    t('dialog.user.info.copy_id')
+                                                                }}</el-dropdown-item>
+                                                                <el-dropdown-item @click="copyUserURL(userDialog.id)">{{
+                                                                    t('dialog.user.info.copy_url')
+                                                                }}</el-dropdown-item>
+                                                                <el-dropdown-item
+                                                                    @click="
+                                                                        copyUserDisplayName(userDialog.ref.displayName)
+                                                                    "
+                                                                    >{{
+                                                                        t('dialog.user.info.copy_display_name')
+                                                                    }}</el-dropdown-item
+                                                                >
+                                                            </el-dropdown-menu>
+                                                        </template>
+                                                    </el-dropdown>
+                                                </el-tooltip>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </el-tab-pane>
 
-                                    <div style="margin-right: 3px; margin-left: 5px" @click.stop>
+                        <el-tab-pane name="Groups" :label="t('dialog.user.groups.header')" lazy>
+                            <div class="tab-content-wrapper">
+                                <div class="tab-section-header">
+                                    <div style="display: flex; align-items: center">
                                         <el-button
+                                            type="default"
+                                            :loading="userDialog.isGroupsLoading"
                                             size="small"
-                                            :icon="Download"
-                                            style="
-                                                display: block;
-                                                padding: 7px;
-                                                font-size: 9px;
-                                                margin-left: 0;
-                                                rotate: 180deg;
-                                            "
-                                            @click="moveGroupTop(group.id)">
+                                            :icon="Refresh"
+                                            circle
+                                            @click="getUserGroups(userDialog.id)">
                                         </el-button>
-                                        <el-button
-                                            size="small"
-                                            :icon="Download"
-                                            style="display: block; padding: 7px; font-size: 9px; margin-left: 0"
-                                            @click="moveGroupBottom(group.id)">
-                                        </el-button>
-                                    </div>
-                                    <div style="margin-right: 10px" @click.stop>
-                                        <el-button
-                                            size="small"
-                                            :icon="Top"
-                                            style="display: block; padding: 7px; font-size: 9px; margin-left: 0"
-                                            @click="moveGroupUp(group.id)">
-                                        </el-button>
-                                        <el-button
-                                            size="small"
-                                            :icon="Bottom"
-                                            style="display: block; padding: 7px; font-size: 9px; margin-left: 0"
-                                            @click="moveGroupDown(group.id)">
-                                        </el-button>
-                                    </div>
-                                    <div class="avatar">
-                                        <img :src="group.iconUrl" loading="lazy" />
-                                    </div>
-                                    <div class="detail">
-                                        <span class="name" v-text="group.name"></span>
-                                        <span class="extra">
-                                            <el-tooltip
-                                                v-if="group.isRepresenting"
-                                                placement="top"
-                                                :content="t('dialog.group.members.representing')">
-                                                <el-icon style="margin-right: 5px"><CollectionTag /></el-icon>
-                                            </el-tooltip>
-                                            <el-tooltip v-if="group.myMember.visibility !== 'visible'" placement="top">
-                                                <template #content>
-                                                    <span
-                                                        >{{ t('dialog.group.members.visibility') }}
-                                                        {{ group.myMember.visibility }}</span
-                                                    >
-                                                </template>
-                                                <el-icon style="margin-right: 5px"><View /></el-icon>
-                                            </el-tooltip>
-                                            <span>({{ group.memberCount }})</span>
-                                        </span>
-                                    </div>
-                                    <el-dropdown
-                                        :disabled="group.privacy !== 'default'"
-                                        trigger="click"
-                                        size="small"
-                                        style="margin-right: 5px">
-                                        <el-button @click.stop size="small">
-                                            <span v-if="group.myMember.visibility === 'visible'">{{
-                                                t('dialog.group.tags.visible')
+                                        <span style="margin-left: 5px">{{
+                                            t('dialog.user.groups.total_count', { count: userGroups.groups.length })
+                                        }}</span>
+                                        <template v-if="userDialogGroupEditMode">
+                                            <span style="margin-left: 10px; color: #909399; font-size: 10px">{{
+                                                t('dialog.user.groups.hold_shift')
                                             }}</span>
-                                            <span v-else-if="group.myMember.visibility === 'friends'">{{
-                                                t('dialog.group.tags.friends')
-                                            }}</span>
-                                            <span v-else-if="group.myMember.visibility === 'hidden'">{{
-                                                t('dialog.group.tags.hidden')
-                                            }}</span>
-                                            <span v-else>{{ group.myMember.visibility }}</span>
-                                            <el-icon style="margin-left: 5px"><ArrowDown /></el-icon>
-                                        </el-button>
-                                        <template #dropdown>
-                                            <el-dropdown-menu>
-                                                <el-dropdown-item @click="setGroupVisibility(group.id, 'visible')">
-                                                    <el-icon v-if="group.myMember.visibility === 'visible'"
-                                                        ><Check
-                                                    /></el-icon>
-                                                    {{
-                                                        t('dialog.group.actions.visibility_everyone')
-                                                    }}</el-dropdown-item
-                                                >
-                                                <el-dropdown-item @click="setGroupVisibility(group.id, 'friends')">
-                                                    <el-icon v-if="group.myMember.visibility === 'friends'"
-                                                        ><Check
-                                                    /></el-icon>
-                                                    {{ t('dialog.group.actions.visibility_friends') }}</el-dropdown-item
-                                                >
-                                                <el-dropdown-item @click="setGroupVisibility(group.id, 'hidden')"
-                                                    ><el-icon v-if="group.myMember.visibility === 'hidden'"
-                                                        ><Check
-                                                    /></el-icon>
-                                                    {{ t('dialog.group.actions.visibility_hidden') }}</el-dropdown-item
-                                                >
-                                            </el-dropdown-menu>
                                         </template>
-                                    </el-dropdown>
-                                    <!--//- JSON is missing isSubscribedToAnnouncements, can't be implemented-->
-                                    <!-- <el-button
+                                    </div>
+                                    <div style="display: flex; align-items: center">
+                                        <template v-if="!userDialogGroupEditMode">
+                                            <span style="margin-right: 5px">{{ t('dialog.user.groups.sort_by') }}</span>
+                                            <el-dropdown
+                                                trigger="click"
+                                                size="small"
+                                                style="margin-right: 5px"
+                                                :disabled="userDialog.isGroupsLoading"
+                                                @click.stop>
+                                                <el-button size="small">
+                                                    <span
+                                                        >{{ t(userDialog.groupSorting.name) }}
+                                                        <el-icon style="margin-left: 5px"><ArrowDown /></el-icon>
+                                                    </span>
+                                                </el-button>
+                                                <template #dropdown>
+                                                    <el-dropdown-menu>
+                                                        <el-dropdown-item
+                                                            v-for="(item, key) in userDialogGroupSortingOptions"
+                                                            :key="key"
+                                                            :disabled="
+                                                                item === userDialogGroupSortingOptions.inGame &&
+                                                                userDialog.id !== currentUser.id
+                                                            "
+                                                            @click="setUserDialogGroupSorting(item)"
+                                                            >{{ t(item.name) }}
+                                                        </el-dropdown-item>
+                                                    </el-dropdown-menu>
+                                                </template>
+                                            </el-dropdown>
+                                        </template>
+                                        <el-button
+                                            v-if="userDialogGroupEditMode"
+                                            size="small"
+                                            :icon="Edit"
+                                            style="margin-right: 5px; height: 29px; padding: 7px 15px"
+                                            @click="exitEditModeCurrentUserGroups">
+                                            {{ t('dialog.user.groups.exit_edit_mode') }}
+                                        </el-button>
+                                        <el-button
+                                            v-else-if="currentUser.id === userDialog.id"
+                                            size="small"
+                                            :icon="Edit"
+                                            style="margin-right: 5px; height: 29px; padding: 7px 15px"
+                                            @click="editModeCurrentUserGroups">
+                                            {{ t('dialog.user.groups.edit_mode') }}
+                                        </el-button>
+                                    </div>
+                                </div>
+                                <div v-loading="userDialog.isGroupsLoading" class="tab-content-body">
+                                    <template v-if="userDialogGroupEditMode">
+                                        <div
+                                            class="x-friend-list"
+                                            style="margin-top: 10px; margin-bottom: 15px; max-height: unset">
+                                            <!-- Bulk actions dropdown (shown only in edit mode) -->
+                                            <el-dropdown trigger="click">
+                                                <el-button
+                                                    size="small"
+                                                    :icon="Setting"
+                                                    style="
+                                                        margin-right: 5px;
+                                                        height: 29px;
+                                                        padding: 7px 15px;
+                                                        margin-bottom: 5px;
+                                                    ">
+                                                    {{ t('dialog.group.actions.manage_selected') }}
+                                                    <el-icon style="margin-left: 5px"><ArrowDown /></el-icon>
+                                                </el-button>
+                                                <template #dropdown>
+                                                    <el-dropdown-menu>
+                                                        <el-dropdown-item @click="bulkSetVisibility('visible')">
+                                                            {{ t('dialog.group.actions.visibility_everyone') }}
+                                                        </el-dropdown-item>
+                                                        <el-dropdown-item @click="bulkSetVisibility('friends')">
+                                                            {{ t('dialog.group.actions.visibility_friends') }}
+                                                        </el-dropdown-item>
+                                                        <el-dropdown-item @click="bulkSetVisibility('hidden')">
+                                                            {{ t('dialog.group.actions.visibility_hidden') }}
+                                                        </el-dropdown-item>
+                                                        <el-dropdown-item divided @click="bulkLeaveGroups">
+                                                            <el-icon><Delete /></el-icon>
+                                                            {{ t('dialog.user.groups.leave_group_tooltip') }}
+                                                        </el-dropdown-item>
+                                                    </el-dropdown-menu>
+                                                </template>
+                                            </el-dropdown>
+
+                                            <!-- Select All button -->
+                                            <el-button
+                                                size="small"
+                                                :icon="userDialogGroupAllSelected ? Close : Check"
+                                                style="height: 29px; padding: 7px 15px; margin-bottom: 5px"
+                                                @click="selectAllGroups">
+                                                {{
+                                                    userDialogGroupAllSelected
+                                                        ? t('dialog.group.actions.deselect_all')
+                                                        : t('dialog.group.actions.select_all')
+                                                }}
+                                            </el-button>
+
+                                            <div
+                                                v-for="group in userDialogGroupEditGroups"
+                                                :key="group.id"
+                                                class="x-friend-item x-friend-item-border"
+                                                style="width: 100%"
+                                                @click="showGroupDialog(group.id)">
+                                                <!-- Manual checkbox -->
+                                                <div
+                                                    style="
+                                                        margin-left: 5px;
+                                                        margin-right: 5px;
+                                                        transform-origin: left center;
+                                                    "
+                                                    @click.stop>
+                                                    <el-checkbox
+                                                        :checked="
+                                                            userDialogGroupEditSelectedGroupIds.includes(group.id)
+                                                        "
+                                                        @change="() => toggleGroupSelection(group.id)" />
+                                                </div>
+
+                                                <div style="margin-right: 3px; margin-left: 5px" @click.stop>
+                                                    <el-button
+                                                        size="small"
+                                                        :icon="Download"
+                                                        style="
+                                                            display: block;
+                                                            padding: 7px;
+                                                            font-size: 9px;
+                                                            margin-left: 0;
+                                                            rotate: 180deg;
+                                                        "
+                                                        @click="moveGroupTop(group.id)">
+                                                    </el-button>
+                                                    <el-button
+                                                        size="small"
+                                                        :icon="Download"
+                                                        style="
+                                                            display: block;
+                                                            padding: 7px;
+                                                            font-size: 9px;
+                                                            margin-left: 0;
+                                                        "
+                                                        @click="moveGroupBottom(group.id)">
+                                                    </el-button>
+                                                </div>
+                                                <div style="margin-right: 10px" @click.stop>
+                                                    <el-button
+                                                        size="small"
+                                                        :icon="Top"
+                                                        style="
+                                                            display: block;
+                                                            padding: 7px;
+                                                            font-size: 9px;
+                                                            margin-left: 0;
+                                                        "
+                                                        @click="moveGroupUp(group.id)">
+                                                    </el-button>
+                                                    <el-button
+                                                        size="small"
+                                                        :icon="Bottom"
+                                                        style="
+                                                            display: block;
+                                                            padding: 7px;
+                                                            font-size: 9px;
+                                                            margin-left: 0;
+                                                        "
+                                                        @click="moveGroupDown(group.id)">
+                                                    </el-button>
+                                                </div>
+                                                <div class="avatar">
+                                                    <img :src="group.iconUrl" loading="lazy" />
+                                                </div>
+                                                <div class="detail">
+                                                    <span class="name" v-text="group.name"></span>
+                                                    <span class="extra">
+                                                        <el-tooltip
+                                                            v-if="group.isRepresenting"
+                                                            placement="top"
+                                                            :content="t('dialog.group.members.representing')">
+                                                            <el-icon style="margin-right: 5px"
+                                                                ><CollectionTag
+                                                            /></el-icon>
+                                                        </el-tooltip>
+                                                        <el-tooltip
+                                                            v-if="group.myMember.visibility !== 'visible'"
+                                                            placement="top">
+                                                            <template #content>
+                                                                <span
+                                                                    >{{ t('dialog.group.members.visibility') }}
+                                                                    {{ group.myMember.visibility }}</span
+                                                                >
+                                                            </template>
+                                                            <el-icon style="margin-right: 5px"><View /></el-icon>
+                                                        </el-tooltip>
+                                                        <span>({{ group.memberCount }})</span>
+                                                    </span>
+                                                </div>
+                                                <el-dropdown
+                                                    :disabled="group.privacy !== 'default'"
+                                                    trigger="click"
+                                                    size="small"
+                                                    style="margin-right: 5px">
+                                                    <el-button @click.stop size="small">
+                                                        <span v-if="group.myMember.visibility === 'visible'">{{
+                                                            t('dialog.group.tags.visible')
+                                                        }}</span>
+                                                        <span v-else-if="group.myMember.visibility === 'friends'">{{
+                                                            t('dialog.group.tags.friends')
+                                                        }}</span>
+                                                        <span v-else-if="group.myMember.visibility === 'hidden'">{{
+                                                            t('dialog.group.tags.hidden')
+                                                        }}</span>
+                                                        <span v-else>{{ group.myMember.visibility }}</span>
+                                                        <el-icon style="margin-left: 5px"><ArrowDown /></el-icon>
+                                                    </el-button>
+                                                    <template #dropdown>
+                                                        <el-dropdown-menu>
+                                                            <el-dropdown-item
+                                                                @click="setGroupVisibility(group.id, 'visible')">
+                                                                <el-icon v-if="group.myMember.visibility === 'visible'"
+                                                                    ><Check
+                                                                /></el-icon>
+                                                                {{
+                                                                    t('dialog.group.actions.visibility_everyone')
+                                                                }}</el-dropdown-item
+                                                            >
+                                                            <el-dropdown-item
+                                                                @click="setGroupVisibility(group.id, 'friends')">
+                                                                <el-icon v-if="group.myMember.visibility === 'friends'"
+                                                                    ><Check
+                                                                /></el-icon>
+                                                                {{
+                                                                    t('dialog.group.actions.visibility_friends')
+                                                                }}</el-dropdown-item
+                                                            >
+                                                            <el-dropdown-item
+                                                                @click="setGroupVisibility(group.id, 'hidden')"
+                                                                ><el-icon v-if="group.myMember.visibility === 'hidden'"
+                                                                    ><Check
+                                                                /></el-icon>
+                                                                {{
+                                                                    t('dialog.group.actions.visibility_hidden')
+                                                                }}</el-dropdown-item
+                                                            >
+                                                        </el-dropdown-menu>
+                                                    </template>
+                                                </el-dropdown>
+                                                <!--//- JSON is missing isSubscribedToAnnouncements, can't be implemented-->
+                                                <!-- <el-button
                                         @click.stop="
                                             setGroupSubscription(group.id, !group.myMember.isSubscribedToAnnouncements)
                                         "
@@ -765,466 +899,516 @@
                                             {{ t('dialog.group.tags.unsubscribed') }}</span
                                         >
                                     </el-button> -->
-                                    <el-tooltip
-                                        placement="right"
-                                        :content="t('dialog.user.groups.leave_group_tooltip')">
+                                                <el-tooltip
+                                                    placement="right"
+                                                    :content="t('dialog.user.groups.leave_group_tooltip')">
+                                                    <el-button
+                                                        v-if="shiftHeld"
+                                                        size="small"
+                                                        :icon="Close"
+                                                        circle
+                                                        style="color: #f56c6c; margin-left: 5px"
+                                                        @click.stop="leaveGroup(group.id)">
+                                                    </el-button>
+                                                    <el-button
+                                                        v-else
+                                                        size="small"
+                                                        :icon="Delete"
+                                                        circle
+                                                        style="margin-left: 5px"
+                                                        @click.stop="leaveGroupPrompt(group.id)">
+                                                    </el-button>
+                                                </el-tooltip>
+                                            </div>
+                                        </div>
+                                    </template>
+                                    <template v-else>
+                                        <template v-if="userGroups.ownGroups.length > 0">
+                                            <span style="font-weight: bold; font-size: 16px">{{
+                                                t('dialog.user.groups.own_groups')
+                                            }}</span>
+                                            <span style="color: #909399; font-size: 12px; margin-left: 5px"
+                                                >{{ userGroups.ownGroups.length }}/{{
+                                                    cachedConfig?.constants?.GROUPS?.MAX_OWNED
+                                                }}</span
+                                            >
+                                            <div
+                                                class="x-friend-list"
+                                                style="margin-top: 10px; margin-bottom: 15px; min-height: 60px">
+                                                <div
+                                                    v-for="group in userGroups.ownGroups"
+                                                    :key="group.id"
+                                                    class="x-friend-item x-friend-item-border"
+                                                    @click="showGroupDialog(group.id)">
+                                                    <div class="avatar">
+                                                        <img :src="group.iconUrl" loading="lazy" />
+                                                    </div>
+                                                    <div class="detail">
+                                                        <span class="name" v-text="group.name"></span>
+                                                        <span class="extra">
+                                                            <el-tooltip
+                                                                v-if="group.isRepresenting"
+                                                                placement="top"
+                                                                :content="t('dialog.group.members.representing')">
+                                                                <el-icon style="margin-right: 5px"
+                                                                    ><CollectionTag
+                                                                /></el-icon>
+                                                            </el-tooltip>
+                                                            <el-tooltip
+                                                                v-if="group.memberVisibility !== 'visible'"
+                                                                placement="top">
+                                                                <template #content>
+                                                                    <span
+                                                                        >{{ t('dialog.group.members.visibility') }}
+                                                                        {{ group.memberVisibility }}</span
+                                                                    >
+                                                                </template>
+                                                                <el-icon style="margin-right: 5px"><View /></el-icon>
+                                                            </el-tooltip>
+                                                            <span>({{ group.memberCount }})</span>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </template>
+                                        <template v-if="userGroups.mutualGroups.length > 0">
+                                            <span style="font-weight: bold; font-size: 16px">{{
+                                                t('dialog.user.groups.mutual_groups')
+                                            }}</span>
+                                            <span style="color: #909399; font-size: 12px; margin-left: 5px">{{
+                                                userGroups.mutualGroups.length
+                                            }}</span>
+                                            <div
+                                                class="x-friend-list"
+                                                style="margin-top: 10px; margin-bottom: 15px; min-height: 60px">
+                                                <div
+                                                    v-for="group in userGroups.mutualGroups"
+                                                    :key="group.id"
+                                                    class="x-friend-item x-friend-item-border"
+                                                    @click="showGroupDialog(group.id)">
+                                                    <div class="avatar">
+                                                        <img :src="group.iconUrl" loading="lazy" />
+                                                    </div>
+                                                    <div class="detail">
+                                                        <span class="name" v-text="group.name"></span>
+                                                        <span class="extra">
+                                                            <el-tooltip
+                                                                v-if="group.isRepresenting"
+                                                                placement="top"
+                                                                :content="t('dialog.group.members.representing')">
+                                                                <el-icon style="margin-right: 5px"
+                                                                    ><CollectionTag
+                                                                /></el-icon>
+                                                            </el-tooltip>
+                                                            <el-tooltip
+                                                                v-if="group.memberVisibility !== 'visible'"
+                                                                placement="top">
+                                                                <template #content>
+                                                                    <span
+                                                                        >{{ t('dialog.group.members.visibility') }}
+                                                                        {{ group.memberVisibility }}</span
+                                                                    >
+                                                                </template>
+                                                                <el-icon style="margin-right: 5px"><View /></el-icon>
+                                                            </el-tooltip>
+                                                            <span>({{ group.memberCount }})</span>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </template>
+                                        <template v-if="userGroups.remainingGroups.length > 0">
+                                            <span style="font-weight: bold; font-size: 16px">{{
+                                                t('dialog.user.groups.groups')
+                                            }}</span>
+                                            <span style="color: #909399; font-size: 12px; margin-left: 5px">
+                                                {{ userGroups.remainingGroups.length }}
+                                                <template v-if="currentUser.id === userDialog.id">
+                                                    /
+                                                    <template v-if="isLocalUserVrcPlusSupporter">
+                                                        {{ cachedConfig?.constants?.GROUPS?.MAX_JOINED_PLUS }}
+                                                    </template>
+                                                    <template v-else>
+                                                        {{ cachedConfig?.constants?.GROUPS?.MAX_JOINED }}
+                                                    </template>
+                                                </template>
+                                            </span>
+                                            <div
+                                                class="x-friend-list"
+                                                style="margin-top: 10px; margin-bottom: 15px; min-height: 60px">
+                                                <div
+                                                    v-for="group in userGroups.remainingGroups"
+                                                    :key="group.id"
+                                                    class="x-friend-item x-friend-item-border"
+                                                    @click="showGroupDialog(group.id)">
+                                                    <div class="avatar">
+                                                        <img :src="group.iconUrl" loading="lazy" />
+                                                    </div>
+                                                    <div class="detail">
+                                                        <span class="name" v-text="group.name"></span>
+                                                        <span class="extra">
+                                                            <el-tooltip
+                                                                v-if="group.isRepresenting"
+                                                                placement="top"
+                                                                :content="t('dialog.group.members.representing')">
+                                                                <el-icon style="margin-right: 5px"
+                                                                    ><CollectionTag
+                                                                /></el-icon>
+                                                            </el-tooltip>
+                                                            <el-tooltip
+                                                                v-if="group.memberVisibility !== 'visible'"
+                                                                placement="top">
+                                                                <template #content>
+                                                                    <span
+                                                                        >{{ t('dialog.group.members.visibility') }}
+                                                                        {{ group.memberVisibility }}</span
+                                                                    >
+                                                                </template>
+                                                                <el-icon style="margin-right: 5px"><View /></el-icon>
+                                                            </el-tooltip>
+                                                            <span>({{ group.memberCount }})</span>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </template>
+                                </div>
+                            </div>
+                        </el-tab-pane>
+
+                        <el-tab-pane name="Worlds" :label="t('dialog.user.worlds.header')" lazy>
+                            <div class="tab-content-wrapper">
+                                <div class="tab-section-header">
+                                    <div style="display: flex; align-items: center">
                                         <el-button
-                                            v-if="shiftHeld"
+                                            type="default"
+                                            :loading="userDialog.isWorldsLoading"
                                             size="small"
-                                            :icon="Close"
+                                            :icon="Refresh"
                                             circle
-                                            style="color: #f56c6c; margin-left: 5px"
-                                            @click.stop="leaveGroup(group.id)">
+                                            @click="refreshUserDialogWorlds()">
+                                        </el-button>
+                                        <span style="margin-left: 5px">{{
+                                            t('dialog.user.worlds.total_count', { count: userDialog.worlds.length })
+                                        }}</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center">
+                                        <span style="margin-right: 5px">{{ t('dialog.user.worlds.sort_by') }}</span>
+                                        <el-dropdown
+                                            trigger="click"
+                                            size="small"
+                                            style="margin-right: 5px"
+                                            :disabled="userDialog.isWorldsLoading"
+                                            @click.stop>
+                                            <el-button size="small">
+                                                <span
+                                                    >{{ t(userDialog.worldSorting.name) }}
+                                                    <el-icon style="margin-left: 5px"><ArrowDown /></el-icon
+                                                ></span>
+                                            </el-button>
+                                            <template #dropdown>
+                                                <el-dropdown-menu>
+                                                    <el-dropdown-item
+                                                        v-for="(item, key) in userDialogWorldSortingOptions"
+                                                        :key="key"
+                                                        @click="setUserDialogWorldSorting(item)">
+                                                        {{ t(item.name) }}
+                                                    </el-dropdown-item>
+                                                </el-dropdown-menu>
+                                            </template>
+                                        </el-dropdown>
+                                        <span style="margin: 0 5px">{{ t('dialog.user.worlds.order_by') }}</span>
+                                        <el-dropdown
+                                            trigger="click"
+                                            size="small"
+                                            style="margin-right: 5px"
+                                            :disabled="userDialog.isWorldsLoading"
+                                            @click.stop>
+                                            <el-button size="small">
+                                                <span
+                                                    >{{ t(userDialog.worldOrder.name) }}
+                                                    <el-icon style="margin-left: 5px"><ArrowDown /></el-icon
+                                                ></span>
+                                            </el-button>
+                                            <template #dropdown>
+                                                <el-dropdown-menu>
+                                                    <el-dropdown-item
+                                                        v-for="(item, key) in userDialogWorldOrderOptions"
+                                                        :key="key"
+                                                        @click="setUserDialogWorldOrder(item)">
+                                                        {{ t(item.name) }}
+                                                    </el-dropdown-item>
+                                                </el-dropdown-menu>
+                                            </template>
+                                        </el-dropdown>
+                                    </div>
+                                </div>
+                                <div v-loading="userDialog.isWorldsLoading" class="tab-content-body">
+                                    <div class="x-friend-list tab-content-list">
+                                        <div
+                                            v-for="world in userDialog.worlds"
+                                            :key="world.id"
+                                            class="x-friend-item x-friend-item-border"
+                                            @click="showWorldDialog(world.id)">
+                                            <div class="avatar">
+                                                <img :src="world.thumbnailImageUrl" loading="lazy" />
+                                            </div>
+                                            <div class="detail">
+                                                <span class="name" v-text="world.name"></span>
+                                                <span v-if="world.occupants" class="extra"
+                                                    >({{ world.occupants }})</span
+                                                >
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </el-tab-pane>
+
+                        <el-tab-pane name="Favorite Worlds" :label="t('dialog.user.favorite_worlds.header')" lazy>
+                            <div class="tab-content-wrapper">
+                                <el-button
+                                    v-if="userFavoriteWorlds && userFavoriteWorlds.length > 0"
+                                    type="default"
+                                    :loading="userDialog.isFavoriteWorldsLoading"
+                                    size="small"
+                                    :icon="Refresh"
+                                    circle
+                                    style="position: absolute; right: 15px; bottom: 15px; z-index: 99"
+                                    @click="getUserFavoriteWorlds(userDialog.id)">
+                                </el-button>
+                                <div class="tab-content-body">
+                                    <el-tabs
+                                        ref="favoriteWorldsRef"
+                                        v-loading="userDialog.isFavoriteWorldsLoading"
+                                        class="zero-margin-tabs"
+                                        type="card"
+                                        stretch>
+                                        <template v-if="userFavoriteWorlds && userFavoriteWorlds.length > 0">
+                                            <el-tab-pane v-for="(list, index) in userFavoriteWorlds" :key="index" lazy>
+                                                <template #label>
+                                                    <span>
+                                                        <i
+                                                            class="x-status-icon"
+                                                            style="margin-right: 6px"
+                                                            :class="userFavoriteWorldsStatus(list[1])">
+                                                        </i>
+                                                        <span
+                                                            style="font-weight: bold; font-size: 14px"
+                                                            v-text="list[0]"></span>
+                                                        <span style="color: #909399; font-size: 10px; margin-left: 5px"
+                                                            >{{ list[2].length }}/{{
+                                                                favoriteLimits.maxFavoritesPerGroup.world
+                                                            }}</span
+                                                        >
+                                                    </span>
+                                                </template>
+                                                <div
+                                                    class="x-friend-list"
+                                                    style="
+                                                        margin-top: 10px;
+                                                        margin-bottom: 15px;
+                                                        min-height: 60px;
+                                                        max-height: none;
+                                                    ">
+                                                    <div
+                                                        v-for="world in list[2]"
+                                                        :key="world.favoriteId"
+                                                        class="x-friend-item x-friend-item-border"
+                                                        @click="showWorldDialog(world.id)">
+                                                        <div class="avatar">
+                                                            <img :src="world.thumbnailImageUrl" loading="lazy" />
+                                                        </div>
+                                                        <div class="detail">
+                                                            <span class="name" v-text="world.name"></span>
+                                                            <span v-if="world.occupants" class="extra"
+                                                                >({{ world.occupants }})</span
+                                                            >
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </el-tab-pane>
+                                        </template>
+                                        <template v-else-if="!userDialog.isFavoriteWorldsLoading">
+                                            <div
+                                                style="
+                                                    display: flex;
+                                                    justify-content: center;
+                                                    align-items: center;
+                                                    height: 100%;
+                                                ">
+                                                <span style="font-size: 16px">No favorite worlds found.</span>
+                                            </div>
+                                        </template>
+                                    </el-tabs>
+                                </div>
+                            </div>
+                        </el-tab-pane>
+
+                        <el-tab-pane name="Avatars" :label="t('dialog.user.avatars.header')" lazy>
+                            <div class="tab-content-wrapper">
+                                <div class="tab-section-header">
+                                    <div style="display: flex; align-items: center">
+                                        <el-button
+                                            v-if="userDialog.ref.id === currentUser.id"
+                                            type="default"
+                                            :loading="userDialog.isAvatarsLoading"
+                                            size="small"
+                                            :icon="Refresh"
+                                            circle
+                                            @click="refreshUserDialogAvatars()">
                                         </el-button>
                                         <el-button
                                             v-else
+                                            type="default"
+                                            :loading="userDialog.isAvatarsLoading"
                                             size="small"
-                                            :icon="Delete"
+                                            :icon="Refresh"
                                             circle
-                                            style="margin-left: 5px"
-                                            @click.stop="leaveGroupPrompt(group.id)">
+                                            @click="setUserDialogAvatarsRemote(userDialog.id)">
                                         </el-button>
-                                    </el-tooltip>
-                                </div>
-                            </div>
-                        </template>
-                        <template v-else>
-                            <template v-if="userGroups.ownGroups.length > 0">
-                                <span style="font-weight: bold; font-size: 16px">{{
-                                    t('dialog.user.groups.own_groups')
-                                }}</span>
-                                <span style="color: #909399; font-size: 12px; margin-left: 5px"
-                                    >{{ userGroups.ownGroups.length }}/{{
-                                        cachedConfig?.constants?.GROUPS?.MAX_OWNED
-                                    }}</span
-                                >
-                                <div
-                                    class="x-friend-list"
-                                    style="margin-top: 10px; margin-bottom: 15px; min-height: 60px">
-                                    <div
-                                        v-for="group in userGroups.ownGroups"
-                                        :key="group.id"
-                                        class="x-friend-item x-friend-item-border"
-                                        @click="showGroupDialog(group.id)">
-                                        <div class="avatar">
-                                            <img :src="group.iconUrl" loading="lazy" />
-                                        </div>
-                                        <div class="detail">
-                                            <span class="name" v-text="group.name"></span>
-                                            <span class="extra">
-                                                <el-tooltip
-                                                    v-if="group.isRepresenting"
-                                                    placement="top"
-                                                    :content="t('dialog.group.members.representing')">
-                                                    <el-icon style="margin-right: 5px"><CollectionTag /></el-icon>
-                                                </el-tooltip>
-                                                <el-tooltip v-if="group.memberVisibility !== 'visible'" placement="top">
-                                                    <template #content>
-                                                        <span
-                                                            >{{ t('dialog.group.members.visibility') }}
-                                                            {{ group.memberVisibility }}</span
-                                                        >
-                                                    </template>
-                                                    <el-icon style="margin-right: 5px"><View /></el-icon>
-                                                </el-tooltip>
-                                                <span>({{ group.memberCount }})</span>
-                                            </span>
-                                        </div>
+                                        <span style="margin-left: 5px">{{
+                                            t('dialog.user.avatars.total_count', { count: userDialogAvatars.length })
+                                        }}</span>
                                     </div>
-                                </div>
-                            </template>
-                            <template v-if="userGroups.mutualGroups.length > 0">
-                                <span style="font-weight: bold; font-size: 16px">{{
-                                    t('dialog.user.groups.mutual_groups')
-                                }}</span>
-                                <span style="color: #909399; font-size: 12px; margin-left: 5px">{{
-                                    userGroups.mutualGroups.length
-                                }}</span>
-                                <div
-                                    class="x-friend-list"
-                                    style="margin-top: 10px; margin-bottom: 15px; min-height: 60px">
-                                    <div
-                                        v-for="group in userGroups.mutualGroups"
-                                        :key="group.id"
-                                        class="x-friend-item x-friend-item-border"
-                                        @click="showGroupDialog(group.id)">
-                                        <div class="avatar">
-                                            <img :src="group.iconUrl" loading="lazy" />
-                                        </div>
-                                        <div class="detail">
-                                            <span class="name" v-text="group.name"></span>
-                                            <span class="extra">
-                                                <el-tooltip
-                                                    v-if="group.isRepresenting"
-                                                    placement="top"
-                                                    :content="t('dialog.group.members.representing')">
-                                                    <el-icon style="margin-right: 5px"><CollectionTag /></el-icon>
-                                                </el-tooltip>
-                                                <el-tooltip v-if="group.memberVisibility !== 'visible'" placement="top">
-                                                    <template #content>
-                                                        <span
-                                                            >{{ t('dialog.group.members.visibility') }}
-                                                            {{ group.memberVisibility }}</span
-                                                        >
-                                                    </template>
-                                                    <el-icon style="margin-right: 5px"><View /></el-icon>
-                                                </el-tooltip>
-                                                <span>({{ group.memberCount }})</span>
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </template>
-                            <template v-if="userGroups.remainingGroups.length > 0">
-                                <span style="font-weight: bold; font-size: 16px">{{
-                                    t('dialog.user.groups.groups')
-                                }}</span>
-                                <span style="color: #909399; font-size: 12px; margin-left: 5px">
-                                    {{ userGroups.remainingGroups.length }}
-                                    <template v-if="currentUser.id === userDialog.id">
-                                        /
-                                        <template v-if="isLocalUserVrcPlusSupporter">
-                                            {{ cachedConfig?.constants?.GROUPS?.MAX_JOINED_PLUS }}
+                                    <div>
+                                        <template v-if="userDialog.ref.id === currentUser.id">
+                                            <span style="margin-right: 5px">{{
+                                                t('dialog.user.avatars.sort_by')
+                                            }}</span>
+                                            <el-dropdown
+                                                trigger="click"
+                                                size="small"
+                                                style="margin-right: 5px"
+                                                :disabled="userDialog.isWorldsLoading"
+                                                @click.stop>
+                                                <el-button size="small">
+                                                    <span
+                                                        >{{
+                                                            t(`dialog.user.avatars.sort_by_${userDialog.avatarSorting}`)
+                                                        }}
+                                                        <el-icon style="margin-left: 5px"><ArrowDown /></el-icon
+                                                    ></span>
+                                                </el-button>
+                                                <template #dropdown>
+                                                    <el-dropdown-menu>
+                                                        <el-dropdown-item
+                                                            @click="changeUserDialogAvatarSorting('name')">
+                                                            {{ t('dialog.user.avatars.sort_by_name') }}
+                                                        </el-dropdown-item>
+                                                        <el-dropdown-item
+                                                            @click="changeUserDialogAvatarSorting('update')">
+                                                            {{ t('dialog.user.avatars.sort_by_update') }}
+                                                        </el-dropdown-item>
+                                                    </el-dropdown-menu>
+                                                </template>
+                                            </el-dropdown>
+                                            <span style="margin-right: 5px; margin-left: 10px">{{
+                                                t('dialog.user.avatars.group_by')
+                                            }}</span>
+                                            <el-dropdown
+                                                trigger="click"
+                                                size="small"
+                                                style="margin-right: 5px"
+                                                :disabled="userDialog.isWorldsLoading"
+                                                @click.stop>
+                                                <el-button size="small">
+                                                    <span
+                                                        >{{
+                                                            t(`dialog.user.avatars.${userDialog.avatarReleaseStatus}`)
+                                                        }}
+                                                        <el-icon style="margin-left: 5px"><ArrowDown /></el-icon
+                                                    ></span>
+                                                </el-button>
+                                                <template #dropdown>
+                                                    <el-dropdown-menu>
+                                                        <el-dropdown-item
+                                                            @click="userDialog.avatarReleaseStatus = 'all'">
+                                                            {{ t('dialog.user.avatars.all') }}
+                                                        </el-dropdown-item>
+                                                        <el-dropdown-item
+                                                            @click="userDialog.avatarReleaseStatus = 'public'">
+                                                            {{ t('dialog.user.avatars.public') }}
+                                                        </el-dropdown-item>
+                                                        <el-dropdown-item
+                                                            @click="userDialog.avatarReleaseStatus = 'private'">
+                                                            {{ t('dialog.user.avatars.private') }}
+                                                        </el-dropdown-item>
+                                                    </el-dropdown-menu>
+                                                </template>
+                                            </el-dropdown>
                                         </template>
-                                        <template v-else>
-                                            {{ cachedConfig?.constants?.GROUPS?.MAX_JOINED }}
-                                        </template>
-                                    </template>
-                                </span>
-                                <div
-                                    class="x-friend-list"
-                                    style="margin-top: 10px; margin-bottom: 15px; min-height: 60px">
-                                    <div
-                                        v-for="group in userGroups.remainingGroups"
-                                        :key="group.id"
-                                        class="x-friend-item x-friend-item-border"
-                                        @click="showGroupDialog(group.id)">
-                                        <div class="avatar">
-                                            <img :src="group.iconUrl" loading="lazy" />
+                                    </div>
+                                </div>
+                                <div class="tab-content-body">
+                                    <div class="x-friend-list tab-content-list">
+                                        <div
+                                            v-for="avatar in userDialogAvatars"
+                                            :key="avatar.id"
+                                            class="x-friend-item x-friend-item-border"
+                                            @click="showAvatarDialog(avatar.id)">
+                                            <div class="avatar">
+                                                <img
+                                                    v-if="avatar.thumbnailImageUrl"
+                                                    :src="avatar.thumbnailImageUrl"
+                                                    loading="lazy" />
+                                            </div>
+                                            <div class="detail">
+                                                <span class="name" v-text="avatar.name"></span>
+                                                <span
+                                                    v-if="avatar.releaseStatus === 'public'"
+                                                    class="extra"
+                                                    style="color: #67c23a"
+                                                    v-text="avatar.releaseStatus">
+                                                </span>
+                                                <span
+                                                    v-else-if="avatar.releaseStatus === 'private'"
+                                                    class="extra"
+                                                    style="color: #f56c6c"
+                                                    v-text="avatar.releaseStatus">
+                                                </span>
+                                                <span v-else class="extra" v-text="avatar.releaseStatus"></span>
+                                            </div>
                                         </div>
-                                        <div class="detail">
-                                            <span class="name" v-text="group.name"></span>
-                                            <span class="extra">
-                                                <el-tooltip
-                                                    v-if="group.isRepresenting"
-                                                    placement="top"
-                                                    :content="t('dialog.group.members.representing')">
-                                                    <el-icon style="margin-right: 5px"><CollectionTag /></el-icon>
-                                                </el-tooltip>
-                                                <el-tooltip v-if="group.memberVisibility !== 'visible'" placement="top">
-                                                    <template #content>
-                                                        <span
-                                                            >{{ t('dialog.group.members.visibility') }}
-                                                            {{ group.memberVisibility }}</span
-                                                        >
-                                                    </template>
-                                                    <el-icon style="margin-right: 5px"><View /></el-icon>
-                                                </el-tooltip>
-                                                <span>({{ group.memberCount }})</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </el-tab-pane>
+
+                        <el-tab-pane name="JSON" :label="t('dialog.user.json.header')" lazy>
+                            <div class="tab-content-wrapper">
+                                <div class="tab-section-header">
+                                    <el-button
+                                        type="default"
+                                        size="small"
+                                        :icon="Refresh"
+                                        circle
+                                        @click="refreshUserDialogTreeData()">
+                                    </el-button>
+                                    <el-button
+                                        type="default"
+                                        size="small"
+                                        :icon="Download"
+                                        circle
+                                        style="margin-left: 5px"
+                                        @click="downloadAndSaveJson(userDialog.id, userDialog.ref)">
+                                    </el-button>
+                                </div>
+                                <div class="tab-content-body">
+                                    <el-tree :data="userDialog.treeData" class="json-tree">
+                                        <template #default="scope">
+                                            <span>
+                                                <span
+                                                    style="font-weight: bold; margin-right: 5px"
+                                                    v-text="scope.data.key"></span>
+                                                <span v-if="!scope.data.children" v-text="scope.data.value"></span>
                                             </span>
-                                        </div>
-                                    </div>
+                                        </template>
+                                    </el-tree>
                                 </div>
-                            </template>
-                        </template>
-                    </div>
-                    </div>
-                </el-tab-pane>
-
-                <el-tab-pane name="Worlds" :label="t('dialog.user.worlds.header')" lazy>
-                    <div class="tab-content-wrapper">
-                        <div class="tab-section-header">
-                        <div style="display: flex; align-items: center">
-                            <el-button
-                                type="default"
-                                :loading="userDialog.isWorldsLoading"
-                                size="small"
-                                :icon="Refresh"
-                                circle
-                                @click="refreshUserDialogWorlds()">
-                            </el-button>
-                            <span style="margin-left: 5px">{{
-                                t('dialog.user.worlds.total_count', { count: userDialog.worlds.length })
-                            }}</span>
-                        </div>
-                        <div style="display: flex; align-items: center">
-                            <span style="margin-right: 5px">{{ t('dialog.user.worlds.sort_by') }}</span>
-                            <el-dropdown
-                                trigger="click"
-                                size="small"
-                                style="margin-right: 5px"
-                                :disabled="userDialog.isWorldsLoading"
-                                @click.stop>
-                                <el-button size="small">
-                                    <span
-                                        >{{ t(userDialog.worldSorting.name) }}
-                                        <el-icon style="margin-left: 5px"><ArrowDown /></el-icon
-                                    ></span>
-                                </el-button>
-                                <template #dropdown>
-                                    <el-dropdown-menu>
-                                        <el-dropdown-item
-                                            v-for="(item, key) in userDialogWorldSortingOptions"
-                                            :key="key"
-                                            @click="setUserDialogWorldSorting(item)">
-                                            {{ t(item.name) }}
-                                        </el-dropdown-item>
-                                    </el-dropdown-menu>
-                                </template>
-                            </el-dropdown>
-                            <span style="margin: 0 5px">{{ t('dialog.user.worlds.order_by') }}</span>
-                            <el-dropdown
-                                trigger="click"
-                                size="small"
-                                style="margin-right: 5px"
-                                :disabled="userDialog.isWorldsLoading"
-                                @click.stop>
-                                <el-button size="small">
-                                    <span
-                                        >{{ t(userDialog.worldOrder.name) }}
-                                        <el-icon style="margin-left: 5px"><ArrowDown /></el-icon
-                                    ></span>
-                                </el-button>
-                                <template #dropdown>
-                                    <el-dropdown-menu>
-                                        <el-dropdown-item
-                                            v-for="(item, key) in userDialogWorldOrderOptions"
-                                            :key="key"
-                                            @click="setUserDialogWorldOrder(item)">
-                                            {{ t(item.name) }}
-                                        </el-dropdown-item>
-                                    </el-dropdown-menu>
-                                </template>
-                            </el-dropdown>
-                        </div>
-                    </div>
-                    <div
-                        v-loading="userDialog.isWorldsLoading"
-                        class="tab-content-body">
-                        <div class="x-friend-list tab-content-list">
-                        <div
-                            v-for="world in userDialog.worlds"
-                            :key="world.id"
-                            class="x-friend-item x-friend-item-border"
-                            @click="showWorldDialog(world.id)">
-                            <div class="avatar">
-                                <img :src="world.thumbnailImageUrl" loading="lazy" />
                             </div>
-                            <div class="detail">
-                                <span class="name" v-text="world.name"></span>
-                                <span v-if="world.occupants" class="extra">({{ world.occupants }})</span>
-                            </div>
-                        </div>
-                        </div>
-                    </div>
-                    </div>
-                </el-tab-pane>
-
-                <el-tab-pane name="Favorite Worlds" :label="t('dialog.user.favorite_worlds.header')" lazy>
-                    <div class="tab-content-wrapper">
-                        <el-button
-                        v-if="userFavoriteWorlds && userFavoriteWorlds.length > 0"
-                        type="default"
-                        :loading="userDialog.isFavoriteWorldsLoading"
-                        size="small"
-                        :icon="Refresh"
-                        circle
-                        style="position: absolute; right: 15px; bottom: 15px; z-index: 99"
-                        @click="getUserFavoriteWorlds(userDialog.id)">
-                        </el-button>
-                        <div class="tab-content-body">
-                            <el-tabs
-                                ref="favoriteWorldsRef"
-                                v-loading="userDialog.isFavoriteWorldsLoading"
-                                class="zero-margin-tabs"
-                                type="card"
-                                stretch>
-                        <template v-if="userFavoriteWorlds && userFavoriteWorlds.length > 0">
-                            <el-tab-pane v-for="(list, index) in userFavoriteWorlds" :key="index" lazy>
-                                <template #label>
-                                    <span>
-                                        <i
-                                            class="x-status-icon"
-                                            style="margin-right: 6px"
-                                            :class="userFavoriteWorldsStatus(list[1])">
-                                        </i>
-                                        <span style="font-weight: bold; font-size: 14px" v-text="list[0]"></span>
-                                        <span style="color: #909399; font-size: 10px; margin-left: 5px"
-                                            >{{ list[2].length }}/{{ favoriteLimits.maxFavoritesPerGroup.world }}</span
-                                        >
-                                    </span>
-                                </template>
-                                <div
-                                    class="x-friend-list"
-                                    style="margin-top: 10px; margin-bottom: 15px; min-height: 60px; max-height: none">
-                                    <div
-                                        v-for="world in list[2]"
-                                        :key="world.favoriteId"
-                                        class="x-friend-item x-friend-item-border"
-                                        @click="showWorldDialog(world.id)">
-                                        <div class="avatar">
-                                            <img :src="world.thumbnailImageUrl" loading="lazy" />
-                                        </div>
-                                        <div class="detail">
-                                            <span class="name" v-text="world.name"></span>
-                                            <span v-if="world.occupants" class="extra">({{ world.occupants }})</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </el-tab-pane>
-                        </template>
-                        <template v-else-if="!userDialog.isFavoriteWorldsLoading">
-                            <div style="display: flex; justify-content: center; align-items: center; height: 100%">
-                                <span style="font-size: 16px">No favorite worlds found.</span>
-                            </div>
-                        </template>
-                            </el-tabs>
-                        </div>
-                    </div>
-                </el-tab-pane>
-
-                <el-tab-pane name="Avatars" :label="t('dialog.user.avatars.header')" lazy>
-                    <div class="tab-content-wrapper">
-                        <div class="tab-section-header">
-                        <div style="display: flex; align-items: center">
-                            <el-button
-                                v-if="userDialog.ref.id === currentUser.id"
-                                type="default"
-                                :loading="userDialog.isAvatarsLoading"
-                                size="small"
-                                :icon="Refresh"
-                                circle
-                                @click="refreshUserDialogAvatars()">
-                            </el-button>
-                            <el-button
-                                v-else
-                                type="default"
-                                :loading="userDialog.isAvatarsLoading"
-                                size="small"
-                                :icon="Refresh"
-                                circle
-                                @click="setUserDialogAvatarsRemote(userDialog.id)">
-                            </el-button>
-                            <span style="margin-left: 5px">{{
-                                t('dialog.user.avatars.total_count', { count: userDialogAvatars.length })
-                            }}</span>
-                        </div>
-                        <div>
-                            <template v-if="userDialog.ref.id === currentUser.id">
-                                <span style="margin-right: 5px">{{ t('dialog.user.avatars.sort_by') }}</span>
-                                <el-dropdown
-                                    trigger="click"
-                                    size="small"
-                                    style="margin-right: 5px"
-                                    :disabled="userDialog.isWorldsLoading"
-                                    @click.stop>
-                                    <el-button size="small">
-                                        <span
-                                            >{{ t(`dialog.user.avatars.sort_by_${userDialog.avatarSorting}`) }}
-                                            <el-icon style="margin-left: 5px"><ArrowDown /></el-icon
-                                        ></span>
-                                    </el-button>
-                                    <template #dropdown>
-                                        <el-dropdown-menu>
-                                            <el-dropdown-item @click="changeUserDialogAvatarSorting('name')">
-                                                {{ t('dialog.user.avatars.sort_by_name') }}
-                                            </el-dropdown-item>
-                                            <el-dropdown-item @click="changeUserDialogAvatarSorting('update')">
-                                                {{ t('dialog.user.avatars.sort_by_update') }}
-                                            </el-dropdown-item>
-                                        </el-dropdown-menu>
-                                    </template>
-                                </el-dropdown>
-                                <span style="margin-right: 5px; margin-left: 10px">{{
-                                    t('dialog.user.avatars.group_by')
-                                }}</span>
-                                <el-dropdown
-                                    trigger="click"
-                                    size="small"
-                                    style="margin-right: 5px"
-                                    :disabled="userDialog.isWorldsLoading"
-                                    @click.stop>
-                                    <el-button size="small">
-                                        <span
-                                            >{{ t(`dialog.user.avatars.${userDialog.avatarReleaseStatus}`) }}
-                                            <el-icon style="margin-left: 5px"><ArrowDown /></el-icon
-                                        ></span>
-                                    </el-button>
-                                    <template #dropdown>
-                                        <el-dropdown-menu>
-                                            <el-dropdown-item @click="userDialog.avatarReleaseStatus = 'all'">
-                                                {{ t('dialog.user.avatars.all') }}
-                                            </el-dropdown-item>
-                                            <el-dropdown-item @click="userDialog.avatarReleaseStatus = 'public'">
-                                                {{ t('dialog.user.avatars.public') }}
-                                            </el-dropdown-item>
-                                            <el-dropdown-item @click="userDialog.avatarReleaseStatus = 'private'">
-                                                {{ t('dialog.user.avatars.private') }}
-                                            </el-dropdown-item>
-                                        </el-dropdown-menu>
-                                    </template>
-                                </el-dropdown>
-                            </template>
-                        </div>
-                    </div>
-                    <div class="tab-content-body">
-                        <div class="x-friend-list tab-content-list">
-                        <div
-                            v-for="avatar in userDialogAvatars"
-                            :key="avatar.id"
-                            class="x-friend-item x-friend-item-border"
-                            @click="showAvatarDialog(avatar.id)">
-                            <div class="avatar">
-                                <img v-if="avatar.thumbnailImageUrl" :src="avatar.thumbnailImageUrl" loading="lazy" />
-                            </div>
-                            <div class="detail">
-                                <span class="name" v-text="avatar.name"></span>
-                                <span
-                                    v-if="avatar.releaseStatus === 'public'"
-                                    class="extra"
-                                    style="color: #67c23a"
-                                    v-text="avatar.releaseStatus">
-                                </span>
-                                <span
-                                    v-else-if="avatar.releaseStatus === 'private'"
-                                    class="extra"
-                                    style="color: #f56c6c"
-                                    v-text="avatar.releaseStatus">
-                                </span>
-                                <span v-else class="extra" v-text="avatar.releaseStatus"></span>
-                            </div>
-                        </div>
-                        </div>
-                    </div>
-                    </div>
-                </el-tab-pane>
-
-                <el-tab-pane name="JSON" :label="t('dialog.user.json.header')" lazy>
-                    <div class="tab-content-wrapper">
-                        <div class="tab-section-header">
-                            <el-button type="default" size="small" :icon="Refresh" circle @click="refreshUserDialogTreeData()">
-                            </el-button>
-                            <el-button
-                                type="default"
-                                size="small"
-                                :icon="Download"
-                                circle
-                                style="margin-left: 5px"
-                                @click="downloadAndSaveJson(userDialog.id, userDialog.ref)">
-                            </el-button>
-                        </div>
-                        <div class="tab-content-body">
-                            <el-tree :data="userDialog.treeData" class="json-tree">
-                                <template #default="scope">
-                                    <span>
-                                        <span style="font-weight: bold; margin-right: 5px" v-text="scope.data.key"></span>
-                                        <span v-if="!scope.data.children" v-text="scope.data.value"></span>
-                                    </span>
-                                </template>
-                            </el-tree>
-                        </div>
-                    </div>
-                </el-tab-pane>
+                        </el-tab-pane>
                     </el-tabs>
                 </div>
             </div>
@@ -1265,6 +1449,7 @@
         Refresh,
         Setting,
         Top,
+        VideoPlay,
         View,
         Warning
     } from '@element-plus/icons-vue';
@@ -1299,8 +1484,10 @@
         useFavoriteStore,
         useFriendStore,
         useGalleryStore,
+        useGameStore,
         useGroupStore,
         useInviteStore,
+        useLaunchStore,
         useLocationStore,
         useModerationStore,
         useUiStore,
@@ -1367,7 +1554,12 @@
     } = useGroupStore();
     const { currentUserGroups, inviteGroupDialog, inGameGroupOrder } = storeToRefs(useGroupStore());
     const { lastLocation, lastLocationDestination } = storeToRefs(useLocationStore());
-    const { refreshInviteMessageTableData } = useInviteStore();
+    const { refreshInviteMessageTableData, canOpenInstanceInGame } = useInviteStore();
+    const launchStore = useLaunchStore();
+    const { tryOpenInstanceInVrc } = launchStore;
+    const { isOpeningInstance } = storeToRefs(launchStore);
+    const gameStore = useGameStore();
+    const { checkGameRunning } = gameStore;
     const { friendLogTable } = storeToRefs(useFriendStore());
     const { getFriendRequest, handleFriendDelete } = useFriendStore();
     const { clearInviteImageUpload, showFullscreenImageDialog } = useGalleryStore();
@@ -1384,7 +1576,21 @@
                 nextTick(() => {
                     userDialogIndex.value = getNextDialogIndex();
                 });
-                !userDialog.value.loading && loadLastActiveTab();
+                if (!userDialog.value.loading) {
+                    loadLastActiveTab();
+                    // Check game running status when dialog opens (for Electron version)
+                    checkGameRunning();
+                }
+            }
+        }
+    );
+
+    // Also check game running when dialog becomes visible
+    watch(
+        () => userDialog.value.visible,
+        (visible) => {
+            if (visible && !userDialog.value.loading) {
+                checkGameRunning();
             }
         }
     );
@@ -1398,12 +1604,12 @@
         }
         const viewedUserLocation = userDialog.value.$location.tag;
         const currentUserLocation = currentUser.value.$locationTag || lastLocation.value.location;
-        
+
         // If either is offline, private, or traveling, they're not in the same instance
         if (!isRealInstance(viewedUserLocation) || !isRealInstance(currentUserLocation)) {
             return false;
         }
-        
+
         // Compare location tags to see if they're in the same instance
         return viewedUserLocation === currentUserLocation;
     });
@@ -2328,6 +2534,14 @@
         nextTick(() => (D.openFlg = false));
     }
 
+    function openInstanceInVrc(location, shortName) {
+        const L = parseLocation(location);
+        if (!L.isRealInstance) {
+            return;
+        }
+        tryOpenInstanceInVrc(L.tag, shortName);
+    }
+
     function toggleAvatarCopying() {
         userRequest.saveCurrentUser({
             allowAvatarCopying: !currentUser.value.allowAvatarCopying
@@ -2738,6 +2952,15 @@
                         border-radius: 8px;
                         padding: 12px;
                         margin-top: 12px;
+                        gap: 8px;
+
+                        .x-friend-item {
+                            margin-bottom: 8px;
+
+                            &:last-child {
+                                margin-bottom: 0;
+                            }
+                        }
                     }
                 }
             }

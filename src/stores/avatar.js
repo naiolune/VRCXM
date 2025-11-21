@@ -425,6 +425,45 @@ export const useAvatarStore = defineStore('Avatar', () => {
         }
     }
 
+    /**
+     * Get avatar ID from an image URL
+     * @param {string} imageUrl - The image URL (e.g., https://api.vrchat.cloud/api/1/image/file_xxx/1/1024)
+     * @returns {Promise<string|null>} - The avatar ID or null if not found
+     */
+    async function getAvatarIdFromImageUrl(imageUrl) {
+        const fileId = extractFileId(imageUrl);
+        if (!fileId) {
+            return null;
+        }
+
+        // First, check local cache
+        let avatarId = checkAvatarCache(fileId);
+        if (avatarId) {
+            return avatarId;
+        }
+
+        // Get file metadata to retrieve ownerId
+        try {
+            const avatarInfo = await getAvatarName(imageUrl);
+            if (!avatarInfo.ownerId) {
+                return null;
+            }
+
+            // Check remote cache
+            avatarId = await checkAvatarCacheRemote(fileId, avatarInfo.ownerId);
+            if (avatarId) {
+                return avatarId;
+            }
+
+            // If still not found, try direct lookup
+            avatarId = await lookupAvatarByImageFileId(avatarInfo.ownerId, fileId);
+            return avatarId;
+        } catch (error) {
+            console.error('Failed to get avatar ID from image URL:', error);
+            return null;
+        }
+    }
+
     async function lookupAvatars(type, search) {
         const avatars = new Map();
         if (type === 'search') {
@@ -681,6 +720,7 @@ export const useAvatarStore = defineStore('Avatar', () => {
         applyAvatar,
         promptClearAvatarHistory,
         getAvatarName,
+        getAvatarIdFromImageUrl,
         lookupAvatars,
         selectAvatarWithConfirmation,
         selectAvatarWithoutConfirmation,

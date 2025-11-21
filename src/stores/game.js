@@ -249,6 +249,20 @@ export const useGameStore = defineStore('Game', () => {
         return AppApi.GetVRChatRegistryKey(key);
     }
 
+    /**
+     * Manually check if VRChat is running and update the state
+     * Useful for Electron version where CheckGameRunning() doesn't automatically update
+     */
+    async function checkGameRunning() {
+        try {
+            const isRunning = await AppApi.IsGameRunning();
+            const isSteamVRRunning = await AppApi.IsSteamVRRunning();
+            await updateIsGameRunning(isRunning, isSteamVRRunning, false);
+        } catch (error) {
+            console.error('Failed to check game running status:', error);
+        }
+    }
+
     return {
         state,
 
@@ -264,6 +278,7 @@ export const useGameStore = defineStore('Game', () => {
         sweepVRChatCache,
         getVRChatCacheSize,
         updateIsGameRunning,
+        checkGameRunning,
         getVRChatRegistryKey,
         checkVRChatDebugLogging
     };

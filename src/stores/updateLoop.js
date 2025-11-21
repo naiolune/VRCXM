@@ -126,14 +126,7 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
                             });
                             return;
                         }
-                        console.log('[GameLog] Calling LogWatcher.GetLogLines()...');
                         const logLines = await LogWatcher.GetLogLines();
-                        console.log('[GameLog] GetLogLines returned:', { 
-                            result: logLines, 
-                            type: typeof logLines, 
-                            isArray: Array.isArray(logLines),
-                            length: logLines?.length 
-                        });
                         if (logLines && logLines.length > 0) {
                             console.log(`[GameLog] ✅ GetLogLines returned ${logLines.length} events`);
                             const joinLeaveEvents = logLines.filter(line => {
@@ -154,21 +147,6 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
                                         console.log(`[GameLog] Join/Leave event (parse error):`, event.substring(0, 200));
                                     }
                                 });
-                            } else {
-                                const sample = logLines[0]?.substring(0, 150);
-                                console.log(`[GameLog] No join/leave events in ${logLines.length} events. Sample:`, sample);
-                                // Show all event types for debugging
-                                const eventTypes = logLines.map(line => {
-                                    try {
-                                        const parsed = JSON.parse(line);
-                                        return parsed && parsed.length > 2 ? parsed[2] : 'unknown';
-                                    } catch {
-                                        return 'parse-error';
-                                    }
-                                });
-                                const typeCounts = {};
-                                eventTypes.forEach(type => typeCounts[type] = (typeCounts[type] || 0) + 1);
-                                console.log(`[GameLog] Event types in this batch:`, typeCounts);
                             }
                             logLines.forEach((logLine) => {
                                 gameLogStore.addGameLogEvent(logLine);

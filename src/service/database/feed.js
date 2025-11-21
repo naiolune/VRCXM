@@ -4,6 +4,9 @@ import { analyticsCache } from './analyticsCache.js';
 
 import sqliteService from '../sqlite.js';
 
+// Set to true to enable verbose debug logging for feed database operations
+const DEBUG_FEED_DB = false;
+
 const feed = {
     async getHiddenFriendsFilter() {
         if (!dbVars.userPrefix) {
@@ -24,44 +27,51 @@ const feed = {
     },
 
     async getFeedDatabase() {
-        console.log('[Feed DB] getFeedDatabase called', {
-            userPrefix: dbVars.userPrefix,
-            maxTableSize: dbVars.maxTableSize
-        });
+        if (DEBUG_FEED_DB) {
+            console.log('[Feed DB] getFeedDatabase called', {
+                userPrefix: dbVars.userPrefix,
+                maxTableSize: dbVars.maxTableSize
+            });
+        }
         if (!dbVars.userPrefix) {
-            console.log('[Feed DB] No userPrefix, returning empty array');
+            if (DEBUG_FEED_DB) {
+                console.log('[Feed DB] No userPrefix, returning empty array');
+            }
             return [];
         }
         const hiddenFilter = await this.getHiddenFriendsFilter();
         
         // First, check if tables exist and have any data at all
-        try {
-            let totalCount = 0;
-            await sqliteService.execute((dbRow) => {
-                totalCount = dbRow[0] || 0;
-            }, `SELECT COUNT(*) FROM ${dbVars.userPrefix}_feed_gps`);
-            console.log('[Feed DB] Total GPS feed items in database:', totalCount);
-            
-            await sqliteService.execute((dbRow) => {
-                totalCount = dbRow[0] || 0;
-            }, `SELECT COUNT(*) FROM ${dbVars.userPrefix}_feed_online_offline`);
-            console.log('[Feed DB] Total Online/Offline feed items in database:', totalCount);
-            
-            await sqliteService.execute((dbRow) => {
-                totalCount = dbRow[0] || 0;
-            }, `SELECT COUNT(*) FROM ${dbVars.userPrefix}_feed_status`);
-            console.log('[Feed DB] Total Status feed items in database:', totalCount);
-        } catch (e) {
-            console.warn('[Feed DB] Error checking table counts:', e);
+        if (DEBUG_FEED_DB) {
+            try {
+                let totalCount = 0;
+                await sqliteService.execute((dbRow) => {
+                    totalCount = dbRow[0] || 0;
+                }, `SELECT COUNT(*) FROM ${dbVars.userPrefix}_feed_gps`);
+                console.log('[Feed DB] Total GPS feed items in database:', totalCount);
+                
+                await sqliteService.execute((dbRow) => {
+                    totalCount = dbRow[0] || 0;
+                }, `SELECT COUNT(*) FROM ${dbVars.userPrefix}_feed_online_offline`);
+                console.log('[Feed DB] Total Online/Offline feed items in database:', totalCount);
+                
+                await sqliteService.execute((dbRow) => {
+                    totalCount = dbRow[0] || 0;
+                }, `SELECT COUNT(*) FROM ${dbVars.userPrefix}_feed_status`);
+                console.log('[Feed DB] Total Status feed items in database:', totalCount);
+            } catch (e) {
+                console.warn('[Feed DB] Error checking table counts:', e);
+            }
         }
         
         var feedDatabase = [];
         var date = new Date();
         date.setDate(date.getDate() - 1); // 24 hour limit
         var dateOffset = date.toJSON();
-        console.log('[Feed DB] Querying feeds from date:', dateOffset);
+        if (DEBUG_FEED_DB) {
+            console.log('[Feed DB] Querying feeds from date:', dateOffset);
+        }
         
-            console.log('[Feed DB] Querying GPS feed...');
         try {
             let gpsCount = 0;
             let queryError = null;
@@ -74,7 +84,7 @@ const feed = {
                     });
                     return;
                 }
-                if (gpsCount === 0 && dbRow.length > 0) {
+                if (DEBUG_FEED_DB && gpsCount === 0 && dbRow.length > 0) {
                     console.log('[Feed DB] GPS dbRow sample structure:', {
                         isArray: Array.isArray(dbRow),
                         length: dbRow.length,
@@ -93,7 +103,7 @@ const feed = {
                     time: dbRow[7],
                     groupName: dbRow[8]
                 };
-                if (gpsCount < 3) {
+                if (DEBUG_FEED_DB && gpsCount < 3) {
                     console.log('[Feed DB] GPS row sample:', {
                         rowId: row.rowId,
                         type: row.type,
@@ -112,13 +122,19 @@ const feed = {
                 if (queryError) {
                     throw queryError;
                 }
-                console.log('[Feed DB] GPS feed query complete, feedDatabase length:', feedDatabase.length, 'GPS items:', gpsCount);
+                if (DEBUG_FEED_DB) {
+                    console.log('[Feed DB] GPS feed query complete, feedDatabase length:', feedDatabase.length, 'GPS items:', gpsCount);
+                }
             } catch (e) {
                 console.error('[Feed DB] Error fetching GPS feed:', e);
-                console.error('[Feed DB] Error stack:', e.stack);
+                if (DEBUG_FEED_DB) {
+                    console.error('[Feed DB] Error stack:', e.stack);
+                }
             }
             
-            console.log('[Feed DB] Querying Status feed...');
+            if (DEBUG_FEED_DB) {
+                console.log('[Feed DB] Querying Status feed...');
+            }
             try {
                 let statusCount = 0;
                 await sqliteService.execute((dbRow) => {
@@ -133,7 +149,7 @@ const feed = {
                     previousStatus: dbRow[6],
                     previousStatusDescription: dbRow[7]
                 };
-                if (statusCount < 3) {
+                if (DEBUG_FEED_DB && statusCount < 3) {
                     console.log('[Feed DB] Status row sample:', {
                         rowId: row.rowId,
                         type: row.type,
@@ -146,12 +162,16 @@ const feed = {
                 feedDatabase.unshift(row);
                 statusCount++;
                 }, `SELECT * FROM ${dbVars.userPrefix}_feed_status WHERE created_at >= date('${dateOffset}') ${hiddenFilter} ORDER BY id DESC`);
-                console.log('[Feed DB] Status feed query complete, feedDatabase length:', feedDatabase.length, 'Status items:', statusCount);
+                if (DEBUG_FEED_DB) {
+                    console.log('[Feed DB] Status feed query complete, feedDatabase length:', feedDatabase.length, 'Status items:', statusCount);
+                }
             } catch (e) {
                 console.warn('[Feed DB] Error fetching Status feed:', e);
             }
             
-            console.log('[Feed DB] Querying Bio feed...');
+            if (DEBUG_FEED_DB) {
+                console.log('[Feed DB] Querying Bio feed...');
+            }
             try {
                 let bioCount = 0;
                 await sqliteService.execute((dbRow) => {
@@ -164,7 +184,7 @@ const feed = {
                     bio: dbRow[4],
                     previousBio: dbRow[5]
                 };
-                if (bioCount < 3) {
+                if (DEBUG_FEED_DB && bioCount < 3) {
                     console.log('[Feed DB] Bio row sample:', {
                         rowId: row.rowId,
                         type: row.type,
@@ -176,12 +196,16 @@ const feed = {
                 feedDatabase.unshift(row);
                 bioCount++;
                 }, `SELECT * FROM ${dbVars.userPrefix}_feed_bio WHERE created_at >= date('${dateOffset}') ${hiddenFilter} ORDER BY id DESC`);
-                console.log('[Feed DB] Bio feed query complete, feedDatabase length:', feedDatabase.length, 'Bio items:', bioCount);
+                if (DEBUG_FEED_DB) {
+                    console.log('[Feed DB] Bio feed query complete, feedDatabase length:', feedDatabase.length, 'Bio items:', bioCount);
+                }
             } catch (e) {
                 console.warn('[Feed DB] Error fetching Bio feed:', e);
             }
             
-            console.log('[Feed DB] Querying Avatar feed...');
+            if (DEBUG_FEED_DB) {
+                console.log('[Feed DB] Querying Avatar feed...');
+            }
             try {
                 let avatarCount = 0;
                 await sqliteService.execute((dbRow) => {
@@ -198,7 +222,7 @@ const feed = {
                     previousCurrentAvatarImageUrl: dbRow[8],
                     previousCurrentAvatarThumbnailImageUrl: dbRow[9]
                 };
-                if (avatarCount < 3) {
+                if (DEBUG_FEED_DB && avatarCount < 3) {
                     console.log('[Feed DB] Avatar row sample:', {
                         rowId: row.rowId,
                         type: row.type,
@@ -211,12 +235,16 @@ const feed = {
                 feedDatabase.unshift(row);
                 avatarCount++;
                 }, `SELECT * FROM ${dbVars.userPrefix}_feed_avatar WHERE created_at >= date('${dateOffset}') ${hiddenFilter} ORDER BY id DESC`);
-                console.log('[Feed DB] Avatar feed query complete, feedDatabase length:', feedDatabase.length, 'Avatar items:', avatarCount);
+                if (DEBUG_FEED_DB) {
+                    console.log('[Feed DB] Avatar feed query complete, feedDatabase length:', feedDatabase.length, 'Avatar items:', avatarCount);
+                }
             } catch (e) {
                 console.warn('[Feed DB] Error fetching Avatar feed:', e);
             }
             
-            console.log('[Feed DB] Querying Online/Offline feed...');
+            if (DEBUG_FEED_DB) {
+                console.log('[Feed DB] Querying Online/Offline feed...');
+            }
             try {
                 let onlineOfflineCount = 0;
                 let onlineCount = 0;
@@ -226,7 +254,7 @@ const feed = {
                 var originalType = dbRow[4];
                 
                 // Detailed logging for first few rows to debug column mapping
-                if (onlineOfflineCount < 3) {
+                if (DEBUG_FEED_DB && onlineOfflineCount < 3) {
                     const dbRowArray = Array.isArray(dbRow) ? Array.from(dbRow) : [];
                     console.log('[Feed DB] Online/Offline dbRow raw:');
                     console.log('  isArray:', Array.isArray(dbRow));
@@ -256,7 +284,7 @@ const feed = {
                 };
                 if (!originalType || originalType === null || originalType === undefined) {
                     undefinedTypeCount++;
-                    if (undefinedTypeCount <= 3) {
+                    if (DEBUG_FEED_DB && undefinedTypeCount <= 3) {
                         const dbRowArray = Array.isArray(dbRow) ? Array.from(dbRow) : [];
                         console.warn('[Feed DB] Online/Offline row with undefined type:');
                         console.warn('  rowId:', row.rowId);
@@ -264,11 +292,13 @@ const feed = {
                         console.warn('  dbRow length:', dbRow.length);
                         console.warn('  All dbRow values:', JSON.stringify(dbRowArray));
                         console.warn('  Mapped row:', JSON.stringify(row));
+                    } else {
+                        console.warn('[Feed DB] Online/Offline row with undefined type, rowId:', row.rowId);
                     }
                 }
                 if (row.type === 'Online') onlineCount++;
                 if (row.type === 'Offline') offlineCount++;
-                if (onlineOfflineCount < 3) {
+                if (DEBUG_FEED_DB && onlineOfflineCount < 3) {
                     console.log('[Feed DB] Online/Offline row sample:');
                     console.log('  rowId:', row.rowId);
                     console.log('  type:', row.type);
@@ -282,16 +312,20 @@ const feed = {
                 feedDatabase.unshift(row);
                 onlineOfflineCount++;
                 }, `SELECT * FROM ${dbVars.userPrefix}_feed_online_offline WHERE created_at >= date('${dateOffset}') ${hiddenFilter} ORDER BY id DESC`);
-                console.log('[Feed DB] Online/Offline feed query complete, feedDatabase length:', feedDatabase.length, 
-                    'Online/Offline items:', onlineOfflineCount, 
-                    'Online:', onlineCount, 
-                    'Offline:', offlineCount,
-                    'Undefined types:', undefinedTypeCount);
+                if (DEBUG_FEED_DB) {
+                    console.log('[Feed DB] Online/Offline feed query complete, feedDatabase length:', feedDatabase.length, 
+                        'Online/Offline items:', onlineOfflineCount, 
+                        'Online:', onlineCount, 
+                        'Offline:', offlineCount,
+                        'Undefined types:', undefinedTypeCount);
+                }
             } catch (e) {
                 console.warn('[Feed DB] Error fetching Online/Offline feed:', e);
             }
             
-            console.log('[Feed DB] All queries complete, total feedDatabase length before sort:', feedDatabase.length);
+            if (DEBUG_FEED_DB) {
+                console.log('[Feed DB] All queries complete, total feedDatabase length before sort:', feedDatabase.length);
+            }
             
             var compareByCreatedAt = function (a, b) {
                 // Sort descending (newest first)
@@ -301,18 +335,20 @@ const feed = {
             };
             
             feedDatabase.sort(compareByCreatedAt);
-            console.log('[Feed DB] getFeedDatabase returning', feedDatabase.length, 'items (sorted descending, newest first)');
-            if (feedDatabase.length > 0) {
-                console.log('[Feed DB] First item:', {
-                    type: feedDatabase[0].type,
-                    displayName: feedDatabase[0].displayName,
-                    created_at: feedDatabase[0].created_at
-                });
-                console.log('[Feed DB] Last item:', {
-                    type: feedDatabase[feedDatabase.length - 1].type,
-                    displayName: feedDatabase[feedDatabase.length - 1].displayName,
-                    created_at: feedDatabase[feedDatabase.length - 1].created_at
-                });
+            if (DEBUG_FEED_DB) {
+                console.log('[Feed DB] getFeedDatabase returning', feedDatabase.length, 'items (sorted descending, newest first)');
+                if (feedDatabase.length > 0) {
+                    console.log('[Feed DB] First item:', {
+                        type: feedDatabase[0].type,
+                        displayName: feedDatabase[0].displayName,
+                        created_at: feedDatabase[0].created_at
+                    });
+                    console.log('[Feed DB] Last item:', {
+                        type: feedDatabase[feedDatabase.length - 1].type,
+                        displayName: feedDatabase[feedDatabase.length - 1].displayName,
+                        created_at: feedDatabase[feedDatabase.length - 1].created_at
+                    });
+                }
             }
             return feedDatabase;
     },
@@ -426,15 +462,18 @@ const feed = {
     },
 
         async lookupFeedDatabase(search, filters, vipList, dateRange = null) {
-            console.log('[Feed DB] lookupFeedDatabase called', {
-                search,
-                filters,
-                vipListLength: vipList?.length || 0,
-                userPrefix: dbVars.userPrefix
-            });
-            
+            if (DEBUG_FEED_DB) {
+                console.log('[Feed DB] lookupFeedDatabase called', {
+                    search,
+                    filters,
+                    vipListLength: vipList?.length || 0,
+                    userPrefix: dbVars.userPrefix
+                });
+            }
             if (!dbVars.userPrefix) {
-                console.log('[Feed DB] No userPrefix, returning empty array');
+                if (DEBUG_FEED_DB) {
+                    console.log('[Feed DB] No userPrefix, returning empty array');
+                }
                 return [];
             }
             
@@ -455,38 +494,40 @@ const feed = {
             }
             
             // Check if tables have any data at all
-            try {
-                let gpsCount = 0;
-                await sqliteService.execute((dbRow) => {
-                    gpsCount = dbRow[0] || 0;
-                }, `SELECT COUNT(*) FROM ${dbVars.userPrefix}_feed_gps`);
-                console.log('[Feed DB] Total GPS items in database:', gpsCount);
-                
-                let onlineOfflineCount = 0;
-                await sqliteService.execute((dbRow) => {
-                    onlineOfflineCount = dbRow[0] || 0;
-                }, `SELECT COUNT(*) FROM ${dbVars.userPrefix}_feed_online_offline`);
-                console.log('[Feed DB] Total Online/Offline items in database:', onlineOfflineCount);
-                
-                let statusCount = 0;
-                await sqliteService.execute((dbRow) => {
-                    statusCount = dbRow[0] || 0;
-                }, `SELECT COUNT(*) FROM ${dbVars.userPrefix}_feed_status`);
-                console.log('[Feed DB] Total Status items in database:', statusCount);
-                
-                let bioCount = 0;
-                await sqliteService.execute((dbRow) => {
-                    bioCount = dbRow[0] || 0;
-                }, `SELECT COUNT(*) FROM ${dbVars.userPrefix}_feed_bio`);
-                console.log('[Feed DB] Total Bio items in database:', bioCount);
-                
-                let avatarCount = 0;
-                await sqliteService.execute((dbRow) => {
-                    avatarCount = dbRow[0] || 0;
-                }, `SELECT COUNT(*) FROM ${dbVars.userPrefix}_feed_avatar`);
-                console.log('[Feed DB] Total Avatar items in database:', avatarCount);
-            } catch (e) {
-                console.warn('[Feed DB] Error checking table counts in lookup:', e);
+            if (DEBUG_FEED_DB) {
+                try {
+                    let gpsCount = 0;
+                    await sqliteService.execute((dbRow) => {
+                        gpsCount = dbRow[0] || 0;
+                    }, `SELECT COUNT(*) FROM ${dbVars.userPrefix}_feed_gps`);
+                    console.log('[Feed DB] Total GPS items in database:', gpsCount);
+                    
+                    let onlineOfflineCount = 0;
+                    await sqliteService.execute((dbRow) => {
+                        onlineOfflineCount = dbRow[0] || 0;
+                    }, `SELECT COUNT(*) FROM ${dbVars.userPrefix}_feed_online_offline`);
+                    console.log('[Feed DB] Total Online/Offline items in database:', onlineOfflineCount);
+                    
+                    let statusCount = 0;
+                    await sqliteService.execute((dbRow) => {
+                        statusCount = dbRow[0] || 0;
+                    }, `SELECT COUNT(*) FROM ${dbVars.userPrefix}_feed_status`);
+                    console.log('[Feed DB] Total Status items in database:', statusCount);
+                    
+                    let bioCount = 0;
+                    await sqliteService.execute((dbRow) => {
+                        bioCount = dbRow[0] || 0;
+                    }, `SELECT COUNT(*) FROM ${dbVars.userPrefix}_feed_bio`);
+                    console.log('[Feed DB] Total Bio items in database:', bioCount);
+                    
+                    let avatarCount = 0;
+                    await sqliteService.execute((dbRow) => {
+                        avatarCount = dbRow[0] || 0;
+                    }, `SELECT COUNT(*) FROM ${dbVars.userPrefix}_feed_avatar`);
+                    console.log('[Feed DB] Total Avatar items in database:', avatarCount);
+                } catch (e) {
+                    console.warn('[Feed DB] Error checking table counts in lookup:', e);
+                }
             }
         var search = search.replaceAll("'", "''");
         if (search.startsWith('wrld_') || search.startsWith('grp_')) {
@@ -542,11 +583,15 @@ const feed = {
             });
         }
             var feedDatabase = [];
-            console.log('[Feed DB] Starting queries, filters:', { gps, status, bio, avatar, online, offline });
+            if (DEBUG_FEED_DB) {
+                console.log('[Feed DB] Starting queries, filters:', { gps, status, bio, avatar, online, offline });
+            }
             
             if (gps) {
                 try {
-                    console.log('[Feed DB] Querying GPS feed...');
+                    if (DEBUG_FEED_DB) {
+                        console.log('[Feed DB] Querying GPS feed...');
+                    }
                     await sqliteService.execute((dbRow) => {
                     var row = {
                         rowId: dbRow[0],
@@ -562,14 +607,18 @@ const feed = {
                     };
                     feedDatabase.unshift(row);
                     }, `SELECT * FROM ${dbVars.userPrefix}_feed_gps WHERE (display_name LIKE '%${search}%' OR world_name LIKE '%${search}%' OR group_name LIKE '%${search}%') ${vipQuery} ${hiddenFilter} ${dateRangeFilter} ORDER BY id DESC LIMIT ${dbVars.maxTableSize}`);
-                    console.log('[Feed DB] GPS feed query complete, feedDatabase length:', feedDatabase.length);
+                    if (DEBUG_FEED_DB) {
+                        console.log('[Feed DB] GPS feed query complete, feedDatabase length:', feedDatabase.length);
+                    }
                 } catch (e) {
                     console.warn('[Feed DB] Error fetching GPS feed in lookup:', e);
                 }
             }
             if (status) {
                 try {
-                    console.log('[Feed DB] Querying Status feed...');
+                    if (DEBUG_FEED_DB) {
+                        console.log('[Feed DB] Querying Status feed...');
+                    }
                     await sqliteService.execute((dbRow) => {
                     var row = {
                         rowId: dbRow[0],
@@ -584,14 +633,18 @@ const feed = {
                     };
                     feedDatabase.unshift(row);
                     }, `SELECT * FROM ${dbVars.userPrefix}_feed_status WHERE (display_name LIKE '%${search}%' OR status LIKE '%${search}%' OR status_description LIKE '%${search}%') ${vipQuery} ${hiddenFilter} ${dateRangeFilter} ORDER BY id DESC LIMIT ${dbVars.maxTableSize}`);
-                    console.log('[Feed DB] Status feed query complete, feedDatabase length:', feedDatabase.length);
+                    if (DEBUG_FEED_DB) {
+                        console.log('[Feed DB] Status feed query complete, feedDatabase length:', feedDatabase.length);
+                    }
                 } catch (e) {
                     console.warn('[Feed DB] Error fetching Status feed in lookup:', e);
                 }
             }
             if (bio) {
                 try {
-                    console.log('[Feed DB] Querying Bio feed...');
+                    if (DEBUG_FEED_DB) {
+                        console.log('[Feed DB] Querying Bio feed...');
+                    }
                     await sqliteService.execute((dbRow) => {
                     var row = {
                         rowId: dbRow[0],
@@ -604,13 +657,14 @@ const feed = {
                     };
                     feedDatabase.unshift(row);
                     }, `SELECT * FROM ${dbVars.userPrefix}_feed_bio WHERE (display_name LIKE '%${search}%' OR bio LIKE '%${search}%') ${vipQuery} ${hiddenFilter} ${dateRangeFilter} ORDER BY id DESC LIMIT ${dbVars.maxTableSize}`);
-                    console.log('[Feed DB] Bio feed query complete, feedDatabase length:', feedDatabase.length);
+                    if (DEBUG_FEED_DB) {
+                        console.log('[Feed DB] Bio feed query complete, feedDatabase length:', feedDatabase.length);
+                    }
                 } catch (e) {
                     console.warn('[Feed DB] Error fetching Bio feed in lookup:', e);
                 }
             }
             if (avatar) {
-                console.log('[Feed DB] Querying Avatar feed...');
             var query = '';
             if (aviPrivate) {
                 query = 'OR user_id = owner_id';
@@ -618,6 +672,9 @@ const feed = {
                 query = 'OR user_id != owner_id';
             }
             try {
+                if (DEBUG_FEED_DB) {
+                    console.log('[Feed DB] Querying Avatar feed...');
+                }
                 await sqliteService.execute((dbRow) => {
                     var row = {
                         rowId: dbRow[0],
@@ -634,13 +691,14 @@ const feed = {
                     };
                     feedDatabase.unshift(row);
                     }, `SELECT * FROM ${dbVars.userPrefix}_feed_avatar WHERE ((display_name LIKE '%${search}%' OR avatar_name LIKE '%${search}%') ${query}) ${vipQuery} ${hiddenFilter} ${dateRangeFilter} ORDER BY id DESC LIMIT ${dbVars.maxTableSize}`);
-                    console.log('[Feed DB] Avatar feed query complete, feedDatabase length:', feedDatabase.length);
+                    if (DEBUG_FEED_DB) {
+                        console.log('[Feed DB] Avatar feed query complete, feedDatabase length:', feedDatabase.length);
+                    }
                 } catch (e) {
                     console.warn('[Feed DB] Error fetching Avatar feed in lookup:', e);
                 }
             }
             if (online || offline) {
-                console.log('[Feed DB] Querying Online/Offline feed...');
             var query = '';
             if (!online || !offline) {
                 if (online) {
@@ -650,9 +708,12 @@ const feed = {
                 }
             }
             try {
+                if (DEBUG_FEED_DB) {
+                    console.log('[Feed DB] Querying Online/Offline feed...');
+                }
                 let rowCount = 0;
                 await sqliteService.execute((dbRow) => {
-                    if (rowCount < 3) {
+                    if (DEBUG_FEED_DB && rowCount < 3) {
                         console.log('[Feed DB] Online/Offline dbRow sample in lookup:', {
                             isArray: Array.isArray(dbRow),
                             length: dbRow?.length,
@@ -675,19 +736,23 @@ const feed = {
                         time: dbRow[7],
                         groupName: dbRow[8]
                     };
-                    if (rowCount < 3) {
+                    if (DEBUG_FEED_DB && rowCount < 3) {
                         console.log('[Feed DB] Online/Offline mapped row sample:', row);
                     }
                     feedDatabase.unshift(row);
                     rowCount++;
                     }, `SELECT * FROM ${dbVars.userPrefix}_feed_online_offline WHERE ((display_name LIKE '%${search}%' OR world_name LIKE '%${search}%' OR group_name LIKE '%${search}%') ${query}) ${vipQuery} ${hiddenFilter} ${dateRangeFilter} ORDER BY id DESC LIMIT ${dbVars.maxTableSize}`);
-                    console.log('[Feed DB] Online/Offline feed query complete, feedDatabase length:', feedDatabase.length);
+                    if (DEBUG_FEED_DB) {
+                        console.log('[Feed DB] Online/Offline feed query complete, feedDatabase length:', feedDatabase.length);
+                    }
                 } catch (e) {
                     console.warn('[Feed DB] Error fetching Online/Offline feed in lookup:', e);
                 }
             }
             
-            console.log('[Feed DB] All queries complete, total feedDatabase length before sort:', feedDatabase.length);
+            if (DEBUG_FEED_DB) {
+                console.log('[Feed DB] All queries complete, total feedDatabase length before sort:', feedDatabase.length);
+            }
             
             var compareByCreatedAt = function (a, b) {
                 // Sort descending (newest first)
@@ -697,33 +762,37 @@ const feed = {
             };
             
             feedDatabase.sort(compareByCreatedAt);
-            console.log('[Feed DB] After sort (descending), feedDatabase length:', feedDatabase.length);
+            if (DEBUG_FEED_DB) {
+                console.log('[Feed DB] After sort (descending), feedDatabase length:', feedDatabase.length);
+            }
             
             // Keep only the newest items (first maxTableSize items after descending sort)
             if (feedDatabase.length > dbVars.maxTableSize) {
                 feedDatabase.splice(dbVars.maxTableSize);
             }
-            console.log('[Feed DB] After splice (maxTableSize:', dbVars.maxTableSize, '), final feedDatabase length:', feedDatabase.length);
-            
-            // Log type distribution
-            const typeCounts = {};
-            feedDatabase.forEach(item => {
-                const type = item.type || 'undefined';
-                typeCounts[type] = (typeCounts[type] || 0) + 1;
-            });
-            console.log('[Feed DB] Type distribution:', typeCounts);
-            
-            if (feedDatabase.length > 0) {
-                console.log('[Feed DB] First item in result:', {
-                    type: feedDatabase[0].type,
-                    displayName: feedDatabase[0].displayName,
-                    created_at: feedDatabase[0].created_at
+            if (DEBUG_FEED_DB) {
+                console.log('[Feed DB] After splice (maxTableSize:', dbVars.maxTableSize, '), final feedDatabase length:', feedDatabase.length);
+                
+                // Log type distribution
+                const typeCounts = {};
+                feedDatabase.forEach(item => {
+                    const type = item.type || 'undefined';
+                    typeCounts[type] = (typeCounts[type] || 0) + 1;
                 });
-                console.log('[Feed DB] Last item in result:', {
-                    type: feedDatabase[feedDatabase.length - 1].type,
-                    displayName: feedDatabase[feedDatabase.length - 1].displayName,
-                    created_at: feedDatabase[feedDatabase.length - 1].created_at
-                });
+                console.log('[Feed DB] Type distribution:', typeCounts);
+                
+                if (feedDatabase.length > 0) {
+                    console.log('[Feed DB] First item in result:', {
+                        type: feedDatabase[0].type,
+                        displayName: feedDatabase[0].displayName,
+                        created_at: feedDatabase[0].created_at
+                    });
+                    console.log('[Feed DB] Last item in result:', {
+                        type: feedDatabase[feedDatabase.length - 1].type,
+                        displayName: feedDatabase[feedDatabase.length - 1].displayName,
+                        created_at: feedDatabase[feedDatabase.length - 1].created_at
+                    });
+                }
             }
             
             return feedDatabase;

@@ -11,6 +11,9 @@ import { watchState } from '../service/watchState';
 
 import configRepository from '../service/config';
 
+// Set to true to enable verbose debug logging for feed store operations
+const DEBUG_FEED_STORE = false;
+
 export const useFeedStore = defineStore('Feed', () => {
     const friendStore = useFriendStore();
     const notificationStore = useNotificationStore();
@@ -159,13 +162,14 @@ export const useFeedStore = defineStore('Feed', () => {
     }
 
     async function feedTableLookup() {
-        console.log('[Feed] feedTableLookup called', {
-            search: feedTable.value.search,
-            filter: feedTable.value.filter,
-            vip: feedTable.value.vip,
-            dateRange: feedTable.value.dateRange
-        });
-        
+        if (DEBUG_FEED_STORE) {
+            console.log('[Feed] feedTableLookup called', {
+                search: feedTable.value.search,
+                filter: feedTable.value.filter,
+                vip: feedTable.value.vip,
+                dateRange: feedTable.value.dateRange
+            });
+        }
         await configRepository.setString(
             'VRCX_feedTableFilters',
             JSON.stringify(feedTable.value.filter)
@@ -186,39 +190,48 @@ export const useFeedStore = defineStore('Feed', () => {
         let vipList = [];
         if (feedTable.value.vip) {
             vipList = Array.from(friendStore.localFavoriteFriends.values());
-            console.log('[Feed] VIP filter enabled, vipList length:', vipList.length);
+            if (DEBUG_FEED_STORE) {
+                console.log('[Feed] VIP filter enabled, vipList length:', vipList.length);
+            }
         }
         
-        console.log('[Feed] Calling database.lookupFeedDatabase...');
+        if (DEBUG_FEED_STORE) {
+            console.log('[Feed] Calling database.lookupFeedDatabase...');
+        }
         const result = await database.lookupFeedDatabase(
             feedTable.value.search,
             feedTable.value.filter,
             vipList,
             feedTable.value.dateRange
         );
-        console.log('[Feed] database.lookupFeedDatabase returned', {
-            resultLength: result?.length || 0,
-            firstFew: result?.slice(0, 3) || []
-        });
+        if (DEBUG_FEED_STORE) {
+            console.log('[Feed] database.lookupFeedDatabase returned', {
+                resultLength: result?.length || 0,
+                firstFew: result?.slice(0, 3) || []
+            });
+        }
         
         feedTable.value.data = result;
         feedTable.value.loading = false;
         
-        console.log('[Feed] feedTableLookup complete, feedTable.data.length:', feedTable.value.data.length);
+        if (DEBUG_FEED_STORE) {
+            console.log('[Feed] feedTableLookup complete, feedTable.data.length:', feedTable.value.data.length);
+        }
     }
 
     function addFeed(feed) {
-        console.log('[Feed] addFeed called', {
-            type: feed.type,
-            userId: feed.userId,
-            displayName: feed.displayName,
-            created_at: feed.created_at,
-            currentDataLength: feedTable.value.data.length,
-            currentPage: feedTable.value.currentPage,
-            filter: feedTable.value.filter,
-            vip: feedTable.value.vip
-        });
-        
+        if (DEBUG_FEED_STORE) {
+            console.log('[Feed] addFeed called', {
+                type: feed.type,
+                userId: feed.userId,
+                displayName: feed.displayName,
+                created_at: feed.created_at,
+                currentDataLength: feedTable.value.data.length,
+                currentPage: feedTable.value.currentPage,
+                filter: feedTable.value.filter,
+                vip: feedTable.value.vip
+            });
+        }
         notificationStore.queueFeedNoty(feed);
         feedSessionTable.value.push(feed);
         feedSessionTable.value.shift();
@@ -228,24 +241,32 @@ export const useFeedStore = defineStore('Feed', () => {
             feedTable.value.filter.length > 0 &&
             !feedTable.value.filter.includes(feed.type)
         ) {
-            console.log('[Feed] Feed item filtered out by type filter:', feed.type);
+            if (DEBUG_FEED_STORE) {
+                console.log('[Feed] Feed item filtered out by type filter:', feed.type);
+            }
             return;
         }
         if (
             feedTable.value.vip &&
             !friendStore.localFavoriteFriends.has(feed.userId)
         ) {
-            console.log('[Feed] Feed item filtered out by VIP filter:', feed.userId);
+            if (DEBUG_FEED_STORE) {
+                console.log('[Feed] Feed item filtered out by VIP filter:', feed.userId);
+            }
             return;
         }
         if (!feedSearch(feed)) {
-            console.log('[Feed] Feed item filtered out by search filter');
+            if (DEBUG_FEED_STORE) {
+                console.log('[Feed] Feed item filtered out by search filter');
+            }
             return;
         }
         
         // Add new feed items at the beginning (newest first)
         feedTable.value.data.unshift(feed);
-        console.log('[Feed] Feed item added, new data length:', feedTable.value.data.length);
+        if (DEBUG_FEED_STORE) {
+            console.log('[Feed] Feed item added, new data length:', feedTable.value.data.length);
+        }
         
         // Re-sort to ensure proper order (newest first)
         feedTable.value.data.sort((a, b) => {
@@ -253,7 +274,9 @@ export const useFeedStore = defineStore('Feed', () => {
             const bTime = new Date(b.created_at).getTime();
             return bTime - aTime; // Descending (newest first)
         });
-        console.log('[Feed] Feed data sorted, keeping page:', feedTable.value.currentPage);
+        if (DEBUG_FEED_STORE) {
+            console.log('[Feed] Feed data sorted, keeping page:', feedTable.value.currentPage);
+        }
         
         // Keep user on current page - don't reset to page 1
         sweepFeed();
@@ -284,43 +307,59 @@ export const useFeedStore = defineStore('Feed', () => {
     }
 
     async function initFeedTable() {
-        console.log('[Feed] initFeedTable called', {
-            currentDataLength: feedTable.value.data.length,
-            loading: feedTable.value.loading
-        });
+        if (DEBUG_FEED_STORE) {
+            console.log('[Feed] initFeedTable called', {
+                currentDataLength: feedTable.value.data.length,
+                loading: feedTable.value.loading
+            });
+        }
         // requires dbVars.userPrefix to be already set
         const { dbVars } = await import('../service/database');
         if (!dbVars.userPrefix) {
-            console.log('[Feed] Skipping feed table initialization: user not logged in yet');
+            if (DEBUG_FEED_STORE) {
+                console.log('[Feed] Skipping feed table initialization: user not logged in yet');
+            }
             feedTable.value.loading = false;
             return;
         }
-        console.log('[Feed] User prefix found:', dbVars.userPrefix);
+        if (DEBUG_FEED_STORE) {
+            console.log('[Feed] User prefix found:', dbVars.userPrefix);
+        }
         feedTable.value.loading = true;
 
         await feedTableLookup();
 
-        console.log('[Feed] Getting feed database for session table...');
+        if (DEBUG_FEED_STORE) {
+            console.log('[Feed] Getting feed database for session table...');
+        }
         const getFeedDatabaseResult = await database.getFeedDatabase();
-        console.log('[Feed] getFeedDatabase returned', {
-            resultLength: getFeedDatabaseResult?.length || 0,
-            firstFew: getFeedDatabaseResult?.slice(0, 3) || []
-        });
+        if (DEBUG_FEED_STORE) {
+            console.log('[Feed] getFeedDatabase returned', {
+                resultLength: getFeedDatabaseResult?.length || 0,
+                firstFew: getFeedDatabaseResult?.slice(0, 3) || []
+            });
+        }
         
         if (getFeedDatabaseResult && getFeedDatabaseResult.length > 0) {
             // rough, maybe 100 is enough
             feedSessionTable.value = getFeedDatabaseResult.slice(-100);
-            console.log('[Feed] feedSessionTable set, length:', feedSessionTable.value.length);
+            if (DEBUG_FEED_STORE) {
+                console.log('[Feed] feedSessionTable set, length:', feedSessionTable.value.length);
+            }
         } else {
             feedSessionTable.value = [];
-            console.log('[Feed] feedSessionTable empty');
+            if (DEBUG_FEED_STORE) {
+                console.log('[Feed] feedSessionTable empty');
+            }
         }
         
         feedTable.value.loading = false;
-        console.log('[Feed] initFeedTable complete', {
-            finalDataLength: feedTable.value.data.length,
-            sessionTableLength: feedSessionTable.value.length
-        });
+        if (DEBUG_FEED_STORE) {
+            console.log('[Feed] initFeedTable complete', {
+                finalDataLength: feedTable.value.data.length,
+                sessionTableLength: feedSessionTable.value.length
+            });
+        }
     }
 
     return {
